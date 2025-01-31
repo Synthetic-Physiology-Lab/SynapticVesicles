@@ -1,0 +1,69 @@
+---
+# Model parameters
+p:
+
+  # Physics constants
+  k_b: 1.380649e-23 # Boltzmann constant
+  R: 8.314 # Gas constant [J / (mol * K)]
+  F: 9.648533e+4 # Faraday's constant [C / mol]
+  N_A: 6.02214076e+23 # Avogadro constant [mol^-1]
+
+  # Temperature
+  T: 25.0 # Temperature [C]
+
+  # Cytosolic concentrations
+  pH_C: 7.2 # Cytosolic pH []
+  K_C: 145.0e-3 # Cytosolic K+ concentration [M]
+  Na_C: 10.0e-3 # Cytosolic Na+ concentration [M]
+  Cl_C: 10.0e-3 # Cytosolic Cl- concentration [M]
+
+  # Permeabilities
+  P_H: 6.0e-5 # H+ permeability [cm/s]
+  P_K: 7.1e-7 # K+ permeability [cm/s]
+  P_Na: 9.6e-7 # Na+ permeability [cm/s]
+  P_Cl: 1.2e-5 # Cl- permeability [cm/s]
+  P_W: 0 #0.052 # H2O permeability [cm/s]
+
+  # Capacitance density
+  C_0: 1.0e-6 # Lipid bilayer capacitance [F/cm^2]
+  
+  # Leaflets potentials
+  psi_o: -50.0e-3 # Outside leaflet potential [V]
+  psi_i: 0.0 # Inside leaflet potential [V]
+
+  # Lysosome dimensions
+  d: 0.68 # Lysosome diameter [um] (if considered spherical)
+  V: 3.3e-17 # Lysosome volume [L] (if not considered spherical)
+  S: 6.2e-9 # Lysosome surface area [cm^2] (if not considered spherical)
+  
+  # Lysosome dime (if spherical)
+  d: 0.68 # Lysosome diameter [um]
+
+  # Luminal buffering capacity
+  beta: 40.0e-3 # Buffering capacity [M/pH]
+
+  # Osmotic parameter
+  theta: 0.73 # Osmotic coefficient []
+  v_W: 18.0 # Partial molar volume of water [cm^3/mol]
+  theta_C: 290.0e-03 # Cytoplasmic osmolyte concentration [M]
+
+  # Pumps quantity
+  N_V: 300 # Number of V-ATPases
+  N_ClC: 5000 # Number of ClC-7 antiporters
+
+  # ClC-7 pump stoichiometry
+  ClC_Cl: 2 # ClC-7 Cl- Stoichiometry
+  ClC_H: 1 # ClC-7 H+ Stoichiometry
+
+
+
+# Initial conditions
+init:
+
+  # Luminal concentrations
+  H_L: 0.0 # Luminal H+ concentration [M]
+  pH_L: 7.4 # Luminal pH []
+  K_L: 5.0e-3 # Luminal K+ concentration [M]
+  Na_L: 145.0e-3 # Luminal Na+ concentration [M]
+  Cl_L: 110.0e-3 # Luminal Cl- concentration [M]
+  psi: 0.0 # Voltage difference across lipid bilayer [V]
