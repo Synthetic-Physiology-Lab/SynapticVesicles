@@ -40,7 +40,7 @@ for h_p in H_P:
 
     sol = models.extract_solution_bareSV(y, p)
 
-    pH_SS.append(sol['pH'][-1])
+    pH_SS.append(sol["pH"][-1])
 
 ax.plot(H_P, pH_SS)
 ax.set_xlim(6e-5, 6e-3)
@@ -48,5 +48,3 @@ ax.set_ylim(4.5, 7.5)
 ax.set_xlabel("H+ permeability [cm/s]")
 ax.set_ylabel("Final pH_L []")
 plt.show()
-
-

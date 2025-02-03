@@ -168,7 +168,7 @@ def lysosome_model_MADONNA(y: np.ndarray, t: np.ndarray, p: dict):
     # Lysosome dimensions
     d = p["d"]  # Lysosome diameter [um]
     S = p["S"]  # Lysosome surface area [cm^2]
-    V_0 = p["V_0"] * 1e-15   # Lysosome inital volume [um^3]
+    V_0 = p["V_0"] * 1e-15  # Lysosome inital volume [um^3]
 
     # Luminal buffering capacity
     beta = p["beta"]  # Buffering capacity [M/pH]
@@ -239,7 +239,7 @@ def lysosome_model_MADONNA(y: np.ndarray, t: np.ndarray, p: dict):
     J_W = P_W * S * (theta * (10 ** (-pH) + K + Na + Cl) + Q / V - theta_C)
 
     ## derivatives calculation
-    dV = J_W * v_W / 1e6 * 1e15 # / 1000 / 55 = * v_W(18) / 1e6
+    dV = J_W * v_W / 1e6 * 1e15  # / 1000 / 55 = * v_W(18) / 1e6
     dpH = -(N_V * J_V + N_ClC * J_ClC + J_H) / beta / V / N_A
     dH = N_V * J_V + ClC_H * N_ClC * J_ClC + J_H
     dK = J_K
@@ -254,11 +254,11 @@ def set_lysosome_model_MADONNA(p, init):
     if p["d"] > 0:
         r = p["d"] * 1e-6 / 2  # Lysosome radius [m]
         V = 4 / 3 * np.pi * r**3 * 1e18  # SV volume [um^3]
-        #V = 4 / 3 * np.pi * r**3 * 1e3  # Lysosome volume [L]
+        # V = 4 / 3 * np.pi * r**3 * 1e3  # Lysosome volume [L]
         S = 4 * np.pi * r**2 * 1e4  # Lysosome surface area [cm^2]
     else:
         V = p["V"] * 1e15  # Lysosome volume [um^3]
-        #V = p["V"]  # Lysosome volume [L]
+        # V = p["V"]  # Lysosome volume [L]
         S = p["S"]  # Lysosome surface area [cm^2]
 
     B = (
@@ -269,10 +269,14 @@ def set_lysosome_model_MADONNA(p, init):
         + (p["C_0"] * S) / (V * 1e-15 * p["F"]) * (p["psi_o"] - p["psi_i"])
     )
 
-    Q = V * 1e-15 * (
-        p["theta_C"]
-        - p["theta"]
-        * (10 ** (-init["pH_L"]) + init["K_L"] + init["Na_L"] + init["Cl_L"])
+    Q = (
+        V
+        * 1e-15
+        * (
+            p["theta_C"]
+            - p["theta"]
+            * (10 ** (-init["pH_L"]) + init["K_L"] + init["Na_L"] + init["Cl_L"])
+        )
     )
 
     p["S"] = S
@@ -338,10 +342,6 @@ def calculate_psi(sol, p):
     return (psi, psi_tot)
 
 
-
-
-
-
 def bareSV_model(y: np.ndarray, t: np.ndarray, p: dict):
     """bare synaptic vesicle model containing just vATPase, ClC-3 and passive proton leakage.
 
@@ -378,14 +378,14 @@ def bareSV_model(y: np.ndarray, t: np.ndarray, p: dict):
     K_C = p["K_C"]  # Cytosolic K+ concentration [M]
     Na_C = p["Na_C"]  # Cytosolic Na+ concentration [M]
     Cl_C = p["Cl_C"]  # Cytosolic Cl- concentration [M] 5-50
-    
+
     # Luminal concentrations
     K = p["K_L"]  # Luminal K+ concentration [M]
     Na = p["Na_L"]  # Luminal Na+ concentration [M]
 
     # Permeabilities
     P_H = p["P_H"]  # H+ permeability [cm/s]
-    #P_Cl = p["P_Cl"]  # Cl- permeability [cm/s]
+    # P_Cl = p["P_Cl"]  # Cl- permeability [cm/s]
     P_W = p["P_W"]  # H2O permeability [cm/s]
 
     # Capacitance density
@@ -440,7 +440,7 @@ def bareSV_model(y: np.ndarray, t: np.ndarray, p: dict):
     pHi = pH + psi_i / (RTF * 2.3)  # 2.3 = ln(10)
 
     ## parts calculation
-    psi = F / (C_0 * S) * (V * (H + K + Na - Cl) - B * V_0 )
+    psi = F / (C_0 * S) * (V * (H + K + Na - Cl) - B * V_0)
     U = psi / RTF
     a = -0.3
     b = -1.5e-5
@@ -457,29 +457,28 @@ def bareSV_model(y: np.ndarray, t: np.ndarray, p: dict):
         gg = 1 / (1 - U / 2 + U**2 / 6 - U**3 / 24 + U**4 / 120)
 
     J_H = P_H * S * gg * (10 ** (-pHe) * np.exp(-U) - 10 ** (-pHi)) * N_A / 1000
-    #J_Cl = P_Cl * S * gg * (Cle - Cli * np.exp(-U)) * N_A / 1000
+    # J_Cl = P_Cl * S * gg * (Cle - Cli * np.exp(-U)) * N_A / 1000
     J_W = P_W * S * (theta * (10 ** (-pH) + K + Na + Cl) + Q / V - theta_C)
 
     ## derivatives calculation
     dV = J_W * v_W / 1e6 * 1e15
     dpH = -(N_V * J_V + ClC_H * N_ClC * J_ClC + J_H) / beta / V / N_A
     dH = N_V * J_V + ClC_H * N_ClC * J_ClC + J_H
-    dCl = - ClC_Cl * N_ClC * J_ClC #+ J_Cl
+    dCl = -ClC_Cl * N_ClC * J_ClC  # + J_Cl
 
     dy = (dV, dpH, dH, dCl)
     return np.array(dy)
-
 
 
 def set_bareSV_model(p, init):
     if p["d"] > 0:
         r = p["d"] * 1e-6 / 2  # SV radius [m]
         V = 4 / 3 * np.pi * r**3 * 1e18  # SV volume [um^3]
-        #V = 4 / 3 * np.pi * r**3 * 1e3  # SV volume [L]
+        # V = 4 / 3 * np.pi * r**3 * 1e3  # SV volume [L]
         S = 4 * np.pi * r**2 * 1e4  # SV surface area [cm^2]
     else:
         V = p["V"] * 1e15  # Lysosome volume [um^3]
-        #V = p["V"]  # Lysosome volume [L]
+        # V = p["V"]  # Lysosome volume [L]
         S = p["S"]  # Lysosome surface area [cm^2]
 
     B = (
@@ -490,10 +489,13 @@ def set_bareSV_model(p, init):
         + (p["C_0"] * S) / (V * 1e-15 * p["F"]) * (p["psi_o"] - p["psi_i"])
     )
 
-    Q = V * 1e-15 * (
-        p["theta_C"]
-        - p["theta"]
-        * (10 ** (-init["pH_L"]) + p["K_L"] + p["Na_L"] + init["Cl_L"])
+    Q = (
+        V
+        * 1e-15
+        * (
+            p["theta_C"]
+            - p["theta"] * (10 ** (-init["pH_L"]) + p["K_L"] + p["Na_L"] + init["Cl_L"])
+        )
     )
 
     p["S"] = S
@@ -524,7 +526,6 @@ def set_bareSV_model(p, init):
     y0 = np.array(y0)
 
     return (p, y0)
-
 
 
 def extract_solution_bareSV(y, p):
