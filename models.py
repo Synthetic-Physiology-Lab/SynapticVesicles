@@ -2,484 +2,325 @@ import numpy as np
 import pandas as pd
 from scipy.interpolate import RegularGridInterpolator
 
-
 def lysosome_model(y, t, p):
 
-    ## parameters extraction
-    # Physics constants
-    k_b = p["k_b"]  # Boltzmann constant
-    R = p["R"]  # Gas constant [J / (mol * K)]
-    F = p["F"]  # Faraday's constant [C / mol]
-    N_A = p["N_A"]  # Avogadro constant [mol^-1]
+	## parameters extraction
+	# Physics constants
+	k_b = p['k_b'] # Boltzmann constant
+	R = p['R'] # Gas constant [J / (mol * K)]
+	F = p['F'] # Faraday's constant [C / mol]
+	N_A = p['N_A'] # Avogadro constant [mol^-1]
 
-    # Temperature
-    T = p["T"] + 273.15  # Absolute temperature [K]
+	# Temperature
+	T = p['T'] + 273.15 # Absolute temperature [K]
 
-    # Cytosolic concentrations
-    pH_C = p["pH_C"]  # Cytosolic pH []
-    H_C = 10 ** (-pH_C)  # Cytosolic H+ concentration [M]
-    K_C = p["K_C"]  # Cytosolic K+ concentration [M]
-    Na_C = p["Na_C"]  # Cytosolic Na+ concentration [M]
-    Cl_C = p["Cl_C"]  # Cytosolic Cl- concentration [M] 5-50
+	# Cytosolic concentrations
+	pH_C = p['pH_C'] # Cytosolic pH []
+	H_C = 10**(-pH_C) # Cytosolic H+ concentration [M]
+	K_C = p['K_C'] # Cytosolic K+ concentration [M]
+	Na_C = p['Na_C'] # Cytosolic Na+ concentration [M]
+	Cl_C = p['Cl_C'] # Cytosolic Cl- concentration [M] 5-50
 
-    # Permeabilities
-    P_H = p["P_H"]  # H+ permeability [cm/s]
-    P_K = p["P_K"]  # K+ permeability [cm/s]
-    P_Na = p["P_Na"]  # Na+ permeability [cm/s]
-    P_Cl = p["P_Cl"]  # Cl- permeability [cm/s]
-    P_W = p["P_W"]  # H2O permeability [cm/s]
+	# Permeabilities
+	P_H = p['P_H'] # H+ permeability [cm/s]
+	P_K = p['P_K'] # K+ permeability [cm/s]
+	P_Na = p['P_Na'] # Na+ permeability [cm/s]
+	P_Cl = p['P_Cl'] # Cl- permeability [cm/s]
+	P_W = p['P_W'] # H2O permeability [cm/s]
 
-    # Capacitance density
-    C_0 = p["C_0"]  # Lipid bilayer capacitance [F/cm^2]
+	# Capacitance density
+	C_0 = p['C_0'] # Lipid bilayer capacitance [F/cm^2]
+	  
+	# Leaflets potentials
+	psi_o = p['psi_o'] # Outside leaflet potential [V]
+	psi_i = p['psi_i'] # Inside leaflet potential [V]
 
-    # Leaflets potentials
-    psi_o = p["psi_o"]  # Outside leaflet potential [V]
-    psi_i = p["psi_i"]  # Inside leaflet potential [V]
+	# Lysosome dimensions
+	d = p['d'] # Lysosome diameter [um]
+	S = p['S'] # Lysosome surface area [cm^2]
+	V_0 = p['V_0'] #Lysosome inital volume [L]
 
-    # Lysosome dimensions
-    d = p["d"]  # Lysosome diameter [um]
-    S = p["S"]  # Lysosome surface area [cm^2]
-    V_0 = p["V_0"]  # Lysosome inital volume [L]
+	# Luminal buffering capacity
+	beta = p['beta'] # Buffering capacity [M/pH]
+	
+	# Luminal concentration of impermeant charges
+	B = p['B'] # Concentration of impermeant charges [M]
 
-    # Luminal buffering capacity
-    beta = p["beta"]  # Buffering capacity [M/pH]
+	# Osmotic parameter
+	theta = p['theta'] # Osmotic coefficient []
+	v_W = p['v_W'] # Partial molar volume of water [cm^3/mol]
+	theta_C = p['theta_C'] # Cytoplasmic osmolyte concentration [M]
 
-    # Luminal concentration of impermeant charges
-    B = p["B"]  # Concentration of impermeant charges [M]
+	# Pumps quantity
+	N_V = p['N_V'] # Number of V-ATPases
+	N_ClC = p['N_ClC'] # Number of ClC-7 antiporters
+	J_VATP = p['J_VATP'] # V-ATPase flux [nterpolator object
 
-    # Osmotic parameter
-    theta = p["theta"]  # Osmotic coefficient []
-    v_W = p["v_W"]  # Partial molar volume of water [cm^3/mol]
-    theta_C = p["theta_C"]  # Cytoplasmic osmolyte concentration [M]
+	# ClC-7 pump stoichiometry
+	ClC_Cl = p['ClC_Cl'] # ClC-7 Cl- Stoichiometry
+	ClC_H = p['ClC_H'] # ClC-7 H+ Stoichiometry
+	
+	
+	## state variables extraction
+	H, pH, K, Na, Cl, V = y # Ionic species are expressed in number of molecules
+	# they are converted in concentrations [M]
+	H = H / V / N_A
+	K = K / V / N_A
+	Na = Na / V / N_A
+	Cl = Cl / V / N_A
+	
+	# Modified cytoplasmic surface concentrations
+	#Cle = Cl_C * np.exp(psi_o / RTF)
+	#Ke = K_C * np.exp(-psi_o / RTF)
+	#Nae = Na_C * np.exp(-psi_o / RTF)
+	#pHe = pHbulk + psi_o / (RTF * 2.3) # 2.3 = ln(10)
 
-    # Pumps quantity
-    N_V = p["N_V"]  # Number of V-ATPases
-    N_ClC = p["N_ClC"]  # Number of ClC-7 antiporters
-    J_VATP = p["J_VATP"]  # V-ATPase flux [nterpolator object
+	# Modified luminal surface concentrations
+	#Cli = Cl * np.exp(psi_i / RTF)
+	#Ki = K * np.exp(-psi_i / RTF)
+	#Nai = Na * np.exp(-psi_i / RTF)
+	#pHi = pH + psi_i / (RTF * 2.3) # 2.3 = ln(10)
+	
+	
+	## parts calculation
+	psi = F / (C_0 * S) * (V * (K + Na - Cl + beta * (pH_C - pH) ) - B * V_0 )
+	#U = psi / (k_b * T)
+	RTF = R * T / F
+	U = psi / RTF
+	a = 0.3
+	b = 1.5e-5
+	print('############# ', Cl_C, Cl, ' ############')
+	delta_u_ClC = (ClC_Cl + 1) * psi + RTF * (2.3 * (pH - pH_C) + ClC_Cl * np.log(Cl_C / Cl) )
+	x = 0.5 * (1 + np.tanh( (delta_u_ClC + 250) / 75 ) )
+	J_ClC = x * a * delta_u_ClC + (1 - x) * b * delta_u_ClC**3
+	J_V = J_VATP([psi, pH])[0]
+	
+	J_H = P_H * S * (U * (H - (H_C * np.exp(-U) ) ) ) / (1 - np.exp(-U))
+	J_K = P_K * S * (U * (K - (K_C * np.exp(-U) ) ) ) / (1 - np.exp(-U))
+	J_Na = P_Na * S * (U * (Na - (Na_C * np.exp(-U) ) ) ) / (1 - np.exp(-U))
+	J_Cl = P_Cl * S * (U * (Cl - (Cl_C * np.exp(-U) ) ) ) / (1 - np.exp(-U))
+	
 
-    # ClC-7 pump stoichiometry
-    ClC_Cl = p["ClC_Cl"]  # ClC-7 Cl- Stoichiometry
-    ClC_H = p["ClC_H"]  # ClC-7 H+ Stoichiometry
-
-    ## state variables extraction
-    H, pH, K, Na, Cl, V = y  # Ionic species are expressed in number of molecules
-    # they are converted in concentrations [M]
-    H = H / V / N_A
-    K = K / V / N_A
-    Na = Na / V / N_A
-    Cl = Cl / V / N_A
-
-    # Modified cytoplasmic surface concentrations
-    # Cle = Cl_C * np.exp(psi_o / RTF)
-    # Ke = K_C * np.exp(-psi_o / RTF)
-    # Nae = Na_C * np.exp(-psi_o / RTF)
-    # pHe = pHbulk + psi_o / (RTF * 2.3) # 2.3 = ln(10)
-
-    # Modified luminal surface concentrations
-    # Cli = Cl * np.exp(psi_i / RTF)
-    # Ki = K * np.exp(-psi_i / RTF)
-    # Nai = Na * np.exp(-psi_i / RTF)
-    # pHi = pH + psi_i / (RTF * 2.3) # 2.3 = ln(10)
-
-    ## parts calculation
-    psi = F / (C_0 * S) * (V * (K + Na - Cl + beta * (pH_C - pH)) - B * V_0)
-    # U = psi / (k_b * T)
-    RTF = R * T / F
-    U = psi / RTF
-    a = 0.3
-    b = 1.5e-5
-    print("############# ", Cl_C, Cl, " ############")
-    delta_u_ClC = (ClC_Cl + 1) * psi + RTF * (
-        2.3 * (pH - pH_C) + ClC_Cl * np.log(Cl_C / Cl)
-    )
-    x = 0.5 * (1 + np.tanh((delta_u_ClC + 250) / 75))
-    J_ClC = x * a * delta_u_ClC + (1 - x) * b * delta_u_ClC**3
-    J_V = J_VATP([psi, pH])[0]
-
-    J_H = P_H * S * (U * (H - (H_C * np.exp(-U)))) / (1 - np.exp(-U))
-    J_K = P_K * S * (U * (K - (K_C * np.exp(-U)))) / (1 - np.exp(-U))
-    J_Na = P_Na * S * (U * (Na - (Na_C * np.exp(-U)))) / (1 - np.exp(-U))
-    J_Cl = P_Cl * S * (U * (Cl - (Cl_C * np.exp(-U)))) / (1 - np.exp(-U))
-
-    ## derivatives calculation
-    dH = N_V * J_V + N_ClC * J_ClC + J_H
-    dpH = 1 / beta * dH / V / N_A
-    dK = +J_K
-    dNa = +J_Na
-    dCl = -2 * N_ClC * J_ClC + J_Cl
-    dV = P_W * S * v_W * (theta * (H + K + Na + Cl) - theta_C)
-
-    dy = (dH, dpH, dK, dNa, dCl, dV)
-    print("############# ", dy, " ############")
-    return np.array(dy)
-
+	## derivatives calculation
+	dH = N_V * J_V + N_ClC * J_ClC + J_H
+	dpH = 1 / beta * dH / V / N_A
+	dK = + J_K
+	dNa = + J_Na
+	dCl = -2 * N_ClC * J_ClC + J_Cl
+	dV = P_W * S * v_W * (theta * (H + K + Na + Cl) - theta_C)
+	
+	dy = (dH, dpH, dK, dNa, dCl, dV)
+	print('############# ', dy, ' ############')
+	return np.array(dy)
+	
+	
 
 def lysosome_model_MADONNA(y: np.ndarray, t: np.ndarray, p: dict):
-    """Lysosome model corresponding to Berkeley Madonna code.
-
-
+	"""Lysosome model corresponding to Berkeley Madonna code.
+    
+    
     Parameters
     ----------
-
+    
     y: np.ndarray
         Initial conditions
     t: np.ndarray
         Time points
     p: dict
         Model parameters
-
+        
     Notes
     -----
-
+    
     Model parameters are checked for completeness in function TODO.
     """
 
-    ## parameters extraction
-    # Physics constants
-    k_b = p["k_b"]  # Boltzmann constant
-    R = p["R"]  # Gas constant [J / (mol * K)]
-    F = p["F"]  # Faraday's constant [C / mol]
-    N_A = p["N_A"]  # Avogadro constant [mol^-1]
+	## parameters extraction
+	# Physics constants
+	k_b = p['k_b'] # Boltzmann constant
+	R = p['R'] # Gas constant [J / (mol * K)]
+	F = p['F'] # Faraday's constant [C / mol]
+	N_A = p['N_A'] # Avogadro constant [mol^-1]
 
-    # Temperature
-    T = p["T"] + 273.15  # Absolute temperature [K]
+	# Temperature
+	T = p['T'] + 273.15 # Absolute temperature [K]
 
-    # Cytosolic concentrations
-    pH_C = p["pH_C"]  # Cytosolic pH []
-    H_C = 10 ** (-pH_C)  # Cytosolic H+ concentration [M]
-    K_C = p["K_C"]  # Cytosolic K+ concentration [M]
-    Na_C = p["Na_C"]  # Cytosolic Na+ concentration [M]
-    Cl_C = p["Cl_C"]  # Cytosolic Cl- concentration [M] 5-50
+	# Cytosolic concentrations
+	pH_C = p['pH_C'] # Cytosolic pH []
+	H_C = 10**(-pH_C) # Cytosolic H+ concentration [M]
+	K_C = p['K_C'] # Cytosolic K+ concentration [M]
+	Na_C = p['Na_C'] # Cytosolic Na+ concentration [M]
+	Cl_C = p['Cl_C'] # Cytosolic Cl- concentration [M] 5-50
 
-    # Permeabilities
-    P_H = p["P_H"]  # H+ permeability [cm/s]
-    P_K = p["P_K"]  # K+ permeability [cm/s]
-    P_Na = p["P_Na"]  # Na+ permeability [cm/s]
-    P_Cl = p["P_Cl"]  # Cl- permeability [cm/s]
-    P_W = p["P_W"]  # H2O permeability [cm/s]
+	# Permeabilities
+	P_H = p['P_H'] # H+ permeability [cm/s]
+	P_K = p['P_K'] # K+ permeability [cm/s]
+	P_Na = p['P_Na'] # Na+ permeability [cm/s]
+	P_Cl = p['P_Cl'] # Cl- permeability [cm/s]
+	P_W = p['P_W'] # H2O permeability [cm/s]
 
-    # Capacitance density
-    C_0 = p["C_0"]  # Lipid bilayer capacitance [F/cm^2]
+	# Capacitance density
+	C_0 = p['C_0'] # Lipid bilayer capacitance [F/cm^2]
+	  
+	# Leaflets potentials
+	psi_o = p['psi_o'] # Outside leaflet potential [V]
+	psi_i = p['psi_i'] # Inside leaflet potential [V]
 
-    # Leaflets potentials
-    psi_o = p["psi_o"]  # Outside leaflet potential [V]
-    psi_i = p["psi_i"]  # Inside leaflet potential [V]
+	# Lysosome dimensions
+	d = p['d'] # Lysosome diameter [um]
+	S = p['S'] # Lysosome surface area [cm^2]
+	V_0 = p['V_0'] #Lysosome inital volume [L]
 
-    # Lysosome dimensions
-    d = p["d"]  # Lysosome diameter [um]
-    S = p["S"]  # Lysosome surface area [cm^2]
-    V_0 = p["V_0"]  # Lysosome inital volume [L]
+	# Luminal buffering capacity
+	beta = p['beta'] # Buffering capacity [M/pH]
+	
+	# Luminal concentration of impermeant charges
+	B = p['B'] # Concentration of impermeant charges [M]
+	
+	# Osmotic balance term
+	Q = p['Q']
 
-    # Luminal buffering capacity
-    beta = p["beta"]  # Buffering capacity [M/pH]
+	# Osmotic parameter
+	theta = p['theta'] # Osmotic coefficient []
+	v_W = p['v_W'] # Partial molar volume of water [cm^3/mol]
+	theta_C = p['theta_C'] # Cytoplasmic osmolyte concentration [M]
 
-    # Luminal concentration of impermeant charges
-    B = p["B"]  # Concentration of impermeant charges [M]
+	# Pumps quantity
+	N_V = p['N_V'] # Number of V-ATPases
+	N_ClC = p['N_ClC'] # Number of ClC-7 antiporters
+	J_VATP = p['J_VATP'] # V-ATPase flux [nterpolator object
 
-    # Osmotic balance term
-    Q = p["Q"]
+	# ClC-7 pump stoichiometry
+	ClC_Cl = p['ClC_Cl'] # ClC-7 Cl- Stoichiometry
+	ClC_H = p['ClC_H'] # ClC-7 H+ Stoichiometry
+	
+	
+	## state variables extraction
+	V, pH, H, K, Na, Cl = y # Ionic species are expressed in number of molecules
+	# they are converted in concentrations [M]
+	H = H / V / N_A
+	K = K / V / N_A
+	Na = Na / V / N_A
+	Cl = Cl / V / N_A
+	
+	RTF = R * T / F
+	# Modified cytoplasmic surface concentrations
+	Cle = Cl_C * np.exp(psi_o / RTF)
+	Ke = K_C * np.exp(-psi_o / RTF)
+	Nae = Na_C * np.exp(-psi_o / RTF)
+	pHe = pH_C + psi_o / (RTF * 2.3) # 2.3 = ln(10)
 
-    # Osmotic parameter
-    theta = p["theta"]  # Osmotic coefficient []
-    v_W = p["v_W"]  # Partial molar volume of water [cm^3/mol]
-    theta_C = p["theta_C"]  # Cytoplasmic osmolyte concentration [M]
+	# Modified luminal surface concentrations
+	Cli = Cl * np.exp(psi_i / RTF)
+	Ki = K * np.exp(-psi_i / RTF)
+	Nai = Na * np.exp(-psi_i / RTF)
+	pHi = pH + psi_i / (RTF * 2.3) # 2.3 = ln(10)
+	
+	
+	## parts calculation
+	psi = F / (C_0 * S) * (V * (H + K + Na - Cl) - B * V_0)
+	U = psi / RTF
+	a = -0.3
+	b = -1.5e-5
+	delta_u_ClC = (ClC_Cl + ClC_H) * psi*1e3 + RTF*1e3 * (2.3 * (pHe - pHi) + ClC_Cl * np.log(Cle / Cli) )
+	x = 0.5 + 0.5 * np.tanh( (delta_u_ClC + 250) / 75 )
+	J_ClC = x * a * delta_u_ClC + (1 - x) * b * delta_u_ClC**3
+	J_V = J_VATP([psi*1e3, pH])[0]
+	
+	
+	if np.abs(psi) > 0.01:
+		gg = U / (1 - np.exp(-U))
+	else:
+		gg = 1 / (1 - U/2 + U**2/6 - U**3/24 + U**4/120)
+	
+	J_H = P_H * S * gg * (10**(-pHe) * np.exp(-U) - 10**(-pHi)) * N_A / 1000
+	J_K = P_K * S * gg * (Ke * np.exp(-U) - Ki) * N_A / 1000
+	J_Na = P_Na * S * gg * (Nae * np.exp(-U) - Nai) * N_A / 1000
+	J_Cl = P_Cl * S * gg * (Cle - Cli * np.exp(-U)) * N_A / 1000
+	J_W = P_W * S * (theta * (10**(-pH) + K + Na + Cl) + Q / V - theta_C)
+	
 
-    # Pumps quantity
-    N_V = p["N_V"]  # Number of V-ATPases
-    N_ClC = p["N_ClC"]  # Number of ClC-7 antiporters
-    J_VATP = p["J_VATP"]  # V-ATPase flux [nterpolator object
-
-    # ClC-7 pump stoichiometry
-    ClC_Cl = p["ClC_Cl"]  # ClC-7 Cl- Stoichiometry
-    ClC_H = p["ClC_H"]  # ClC-7 H+ Stoichiometry
-
-    ## state variables extraction
-    V, pH, H, K, Na, Cl = y  # Ionic species are expressed in number of molecules
-    # they are converted in concentrations [M]
-    H = H / V / N_A
-    K = K / V / N_A
-    Na = Na / V / N_A
-    Cl = Cl / V / N_A
-
-    RTF = R * T / F
-    # Modified cytoplasmic surface concentrations
-    Cle = Cl_C * np.exp(psi_o / RTF)
-    Ke = K_C * np.exp(-psi_o / RTF)
-    Nae = Na_C * np.exp(-psi_o / RTF)
-    pHe = pH_C + psi_o / (RTF * 2.3)  # 2.3 = ln(10)
-
-    # Modified luminal surface concentrations
-    Cli = Cl * np.exp(psi_i / RTF)
-    Ki = K * np.exp(-psi_i / RTF)
-    Nai = Na * np.exp(-psi_i / RTF)
-    pHi = pH + psi_i / (RTF * 2.3)  # 2.3 = ln(10)
-
-    ## parts calculation
-    psi = F / (C_0 * S) * (V * (H + K + Na - Cl) - B * V_0)
-    U = psi / RTF
-    a = -0.3
-    b = -1.5e-5
-    delta_u_ClC = (ClC_Cl + ClC_H) * psi * 1e3 + RTF * 1e3 * (
-        2.3 * (pHe - pHi) + ClC_Cl * np.log(Cle / Cli)
-    )
-    x = 0.5 + 0.5 * np.tanh((delta_u_ClC + 250) / 75)
-    J_ClC = x * a * delta_u_ClC + (1 - x) * b * delta_u_ClC**3
-    J_V = J_VATP([psi * 1e3, pH])[0]
-
-    if np.abs(psi) > 0.01:
-        gg = U / (1 - np.exp(-U))
-    else:
-        gg = 1 / (1 - U / 2 + U**2 / 6 - U**3 / 24 + U**4 / 120)
-
-    J_H = P_H * S * gg * (10 ** (-pHe) * np.exp(-U) - 10 ** (-pHi)) * N_A / 1000
-    J_K = P_K * S * gg * (Ke * np.exp(-U) - Ki) * N_A / 1000
-    J_Na = P_Na * S * gg * (Nae * np.exp(-U) - Nai) * N_A / 1000
-    J_Cl = P_Cl * S * gg * (Cle - Cli * np.exp(-U)) * N_A / 1000
-    J_W = P_W * S * (theta * (10 ** (-pH) + K + Na + Cl) + Q / V - theta_C)
-
-    ## derivatives calculation
-    dV = J_W * v_W / 1e6  # / 1000 / 55 = * v_W(18) / 1e6
-    dpH = -(N_V * J_V + N_ClC * J_ClC + J_H) / beta / V / N_A
-    dH = N_V * J_V + ClC_H * N_ClC * J_ClC + J_H
-    dK = J_K
-    dNa = J_Na
-    dCl = J_Cl - ClC_Cl * N_ClC * J_ClC
-
-    dy = (dV, dpH, dH, dK, dNa, dCl)
-    return np.array(dy)
-
-
-def lysosome_model_MADONNA_2(t: np.ndarray, y: np.ndarray, p: dict):
-
-    ## parameters extraction
-    # Physics constants
-    k_b = p["k_b"]  # Boltzmann constant
-    R = p["R"]  # Gas constant [J / (mol * K)]
-    F = p["F"]  # Faraday's constant [C / mol]
-    N_A = p["N_A"]  # Avogadro constant [mol^-1]
-
-    # Temperature
-    T = p["T"] + 273.15  # Absolute temperature [K]
-
-    # Cytosolic concentrations
-    pH_C = p["pH_C"]  # Cytosolic pH []
-    H_C = 10 ** (-pH_C)  # Cytosolic H+ concentration [M]
-    K_C = p["K_C"]  # Cytosolic K+ concentration [M]
-    Na_C = p["Na_C"]  # Cytosolic Na+ concentration [M]
-    Cl_C = p["Cl_C"]  # Cytosolic Cl- concentration [M] 5-50
-
-    # Permeabilities
-    P_H = p["P_H"]  # H+ permeability [cm/s]
-    P_K = p["P_K"]  # K+ permeability [cm/s]
-    P_Na = p["P_Na"]  # Na+ permeability [cm/s]
-    P_Cl = p["P_Cl"]  # Cl- permeability [cm/s]
-    P_W = p["P_W"]  # H2O permeability [cm/s]
-
-    # Capacitance density
-    C_0 = p["C_0"]  # Lipid bilayer capacitance [F/cm^2]
-
-    # Leaflets potentials
-    psi_o = p["psi_o"]  # Outside leaflet potential [V]
-    psi_i = p["psi_i"]  # Inside leaflet potential [V]
-
-    # Lysosome dimensions
-    d = p["d"]  # Lysosome diameter [um]
-    S = p["S"]  # Lysosome surface area [cm^2]
-    V_0 = p["V_0"]  # Lysosome inital volume [L]
-
-    # Luminal buffering capacity
-    beta = p["beta"]  # Buffering capacity [M/pH]
-
-    # Luminal concentration of impermeant charges
-    B = p["B"]  # Concentration of impermeant charges [M]
-
-    # Osmotic balance term
-    Q = p["Q"]
-
-    # Osmotic parameter
-    theta = p["theta"]  # Osmotic coefficient []
-    v_W = p["v_W"]  # Partial molar volume of water [cm^3/mol]
-    theta_C = p["theta_C"]  # Cytoplasmic osmolyte concentration [M]
-
-    # Pumps quantity
-    N_V = p["N_V"]  # Number of V-ATPases
-    N_ClC = p["N_ClC"]  # Number of ClC-7 antiporters
-    J_VATP = p["J_VATP"]  # V-ATPase flux [nterpolator object
-
-    # ClC-7 pump stoichiometry
-    ClC_Cl = p["ClC_Cl"]  # ClC-7 Cl- Stoichiometry
-    ClC_H = p["ClC_H"]  # ClC-7 H+ Stoichiometry
-
-    ## state variables extraction
-    V, pH, H, K, Na, Cl = y  # Ionic species are expressed in number of molecules
-    # they are converted in concentrations [M]
-    # V = np.abs(V)
-    print("Cl = ", Cl)
-    H = H / V / N_A
-    K = K / V / N_A
-    Na = Na / V / N_A
-    Cl = Cl / V / N_A
-    print(V)
-
-    RTF = R * T / F
-    # Modified cytoplasmic surface concentrations
-    Cle = Cl_C * np.exp(psi_o / RTF)
-    Ke = K_C * np.exp(-psi_o / RTF)
-    Nae = Na_C * np.exp(-psi_o / RTF)
-    pHe = pH_C + psi_o / (RTF * 2.3)  # 2.3 = ln(10)
-
-    # Modified luminal surface concentrations
-    Cli = Cl * np.exp(psi_i / RTF)
-    Ki = K * np.exp(-psi_i / RTF)
-    Nai = Na * np.exp(-psi_i / RTF)
-    pHi = pH + psi_i / (RTF * 2.3)  # 2.3 = ln(10)
-    # print(Cl, Cle, Cli)
-
-    ## parts calculation
-    psi = F / (C_0 * S) * (V * (H + K + Na - Cl + 0 * beta * (pH_C - pH)) - B * V_0)
-    U = psi / RTF
-    a = -0.3
-    b = -1.5e-5
-    # print(Cle, Cli)
-    delta_u_ClC = (ClC_Cl + ClC_H) * psi * 1e3 + RTF * 1e3 * (
-        2.3 * (pHe - pHi) + ClC_Cl * np.log(Cle / Cli)
-    )
-    x = 0.5 + 0.5 * np.tanh((delta_u_ClC + 250) / 75)
-    J_ClC = x * a * delta_u_ClC + (1 - x) * b * delta_u_ClC**3
-    print("psi = ", psi * 1e3)
-    J_V = J_VATP([psi * 1e3, pH])[0]  ####### psi gets too big #########
-    ########## let's try runge kutta 4/5 as in the paper #########
-
-    if np.abs(psi) > 0.01:
-        gg = U / (1 - np.exp(-U))
-    else:
-        gg = 1 / (1 - U / 2 + U**2 / 6 - U**3 / 24 + U**4 / 120)
-
-    J_H = P_H * S * gg * (10 ** (-pHe) * np.exp(-U) - 10 ** (-pHi)) * N_A / 1000
-    J_K = P_K * S * gg * (Ke * np.exp(-U) - Ki) * N_A / 1000
-    J_Na = P_Na * S * gg * (Nae * np.exp(-U) - Nai) * N_A / 1000
-    J_Cl = P_Cl * S * gg * (Cle - Cli * np.exp(-U)) * N_A / 1000
-    J_W = P_W * S * (theta * (10 ** (-pH) + K + Na + Cl) + Q / V - theta_C)
-    print("pH = ", pH)
-    print("H = ", H)
-    print("K = ", K)
-    print("J_W = ", J_W)
-    print("J_K = ", J_K)
-
-    ## derivatives calculation
-    dV = J_W * v_W / 1e6  # / 1000 / 55 = * v_W(18) / 1e6
-    dpH = -(N_V * J_V + N_ClC * J_ClC + J_H) / beta / V / N_A
-    dH = N_V * J_V + ClC_H * N_ClC * J_ClC + J_H
-    dK = J_K
-    dNa = J_Na
-    dCl = J_Cl - ClC_Cl * N_ClC * J_ClC
-    print("dV = ", dV)
-
-    dy = (dV, dpH, dH, dK, dNa, dCl)
-    # print(dy)
-    return np.array(dy)
-
+	## derivatives calculation
+	dV = J_W * v_W / 1e6 # / 1000 / 55 = * v_W(18) / 1e6
+	dpH = - (N_V * J_V + N_ClC * J_ClC + J_H) / beta / V / N_A
+	dH = N_V * J_V + ClC_H* N_ClC * J_ClC + J_H
+	dK = J_K
+	dNa = J_Na
+	dCl = J_Cl - ClC_Cl * N_ClC * J_ClC
+	
+	
+	dy = (dV, dpH, dH, dK, dNa, dCl)
+	return np.array(dy)
+	
 
 def set_lysosome_model_MADONNA(p, init):
-    if p["d"] > 0:
-        r = p["d"] * 1e-6 / 2  # Lysosome radius [m]
-        V = 4 / 3 * np.pi * r**3 * 1e3  # Lysosome volume [L]
-        S = 4 * np.pi * r**2 * 1e4  # Lysosome surface area [cm^2]
-    else:
-        V = p["V"]  # Lysosome volume [L]
-        S = p["S"]  # Lysosome surface area [cm^2]
+	if p['d'] > 0:
+		r = p['d'] * 1e-6 / 2			# Lysosome radius [m]
+		V = 4/3 * np.pi* r**3 * 1e3		# Lysosome volume [L]
+		S = 4 * np.pi * r**2 * 1e4		# Lysosome surface area [cm^2]
+	else:
+		V = p['V']						# Lysosome volume [L]
+		S = p['S']						# Lysosome surface area [cm^2]
 
-    B = (
-        init["K_L"]
-        + init["Na_L"]
-        - init["Cl_L"]
-        + init["H_L"]
-        + (p["C_0"] * S) / (V * p["F"]) * (p["psi_o"] - p["psi_i"])
-    )
+	B = init['K_L'] + init['Na_L'] - init['Cl_L'] + init['H_L'] + (p['C_0'] * S) / (V * p['F']) * (p['psi_o'] - p['psi_i'])
 
-    Q = V * (
-        p["theta_C"]
-        - p["theta"]
-        * (10 ** (-init["pH_L"]) + init["K_L"] + init["Na_L"] + init["Cl_L"])
-    )
+	Q = V * (p['theta_C'] - p['theta'] * (10**(-init['pH_L']) + init['K_L'] + init['Na_L'] + init['Cl_L']))
 
-    p["S"] = S
-    p["B"] = B
-    p["Q"] = Q
-    init["V"] = V
-    p["V_0"] = V
+	p['S'] = S
+	p['B'] = B
+	p['Q'] = Q
+	init['V'] = V
+	p['V_0'] = V
 
-    PP = pd.read_excel("datasetProtonPump.xlsx", header=None)
-    PP = np.array(PP)
-    psi = PP[1:, 0]
-    pH = PP[0, 1:]
-    values = PP[1:, 1:]
-    PP_interp = RegularGridInterpolator(
-        points=(psi, pH), values=values, method="linear"
-    )
-    p["J_VATP"] = PP_interp
+	PP = pd.read_excel('datasetProtonPump.xlsx', header=None)
+	PP = np.array(PP)
+	psi = PP[1:,0]
+	pH = PP[0,1:]
+	values = PP[1:,1:]
+	PP_interp = RegularGridInterpolator(points=(psi, pH), values=values, method='linear')
+	p['J_VATP'] = PP_interp
 
-    # Ionic species are expressed in concentrations [M]
-    # they are converted in number of molecules
-    N_A = p["N_A"]
-    y0 = (
-        init["V"],
-        init["pH_L"],
-        init["H_L"] * V * N_A,
-        init["K_L"] * V * N_A,
-        init["Na_L"] * V * N_A,
-        init["Cl_L"] * V * N_A,
-    )
-    y0 = np.array(y0)
-
-    return (p, y0)
-
+	# Ionic species are expressed in concentrations [M]
+	# they are converted in number of molecules
+	N_A = p['N_A']
+	y0 = (init['V'],
+	      init['pH_L'],
+	      init['H_L'] * V * N_A,
+		  init['K_L'] * V * N_A,
+		  init['Na_L'] * V * N_A,
+		  init['Cl_L'] * V * N_A)
+	y0 = np.array(y0)
+	
+	return (p, y0)
+	
 
 def extract_solution(y, p):
-    N_A = p["N_A"]
-    V = y[:, 0]
-    pH = y[:, 1]
-    H = y[:, 2] / V / N_A
-    K = y[:, 3] / V / N_A
-    Na = y[:, 4] / V / N_A
-    Cl = y[:, 5] / V / N_A
-
-    sol = dict()
-    sol["V"] = V
-    sol["pH"] = pH
-    sol["H"] = H
-    sol["K"] = K
-    sol["Na"] = Na
-    sol["Cl"] = Cl
-
-    return sol
-
-
-def extract_solution_2(s, p):
-    N_A = p["N_A"]
-    V = s.y[0, :]
-    pH = s.y[1, :]
-    H = s.y[2, :] / V / N_A
-    K = s.y[3, :] / V / N_A
-    Na = s.y[4, :] / V / N_A
-    Cl = s.y[5, :] / V / N_A
-
-    sol = dict()
-    sol["V"] = V
-    sol["pH"] = pH
-    sol["H"] = H
-    sol["K"] = K
-    sol["Na"] = Na
-    sol["Cl"] = Cl
-
-    return sol
-
+	N_A = p['N_A']
+	V = y[:,0]
+	pH = y[:,1]
+	H = y[:,2] / V / N_A
+	K = y[:,3] / V / N_A
+	Na = y[:,4] / V / N_A
+	Cl = y[:,5] / V / N_A
+	
+	sol = dict()
+	sol['V'] = V
+	sol['pH'] = pH
+	sol['H'] = H
+	sol['K'] = K
+	sol['Na'] = Na
+	sol['Cl'] = Cl
+	
+	return sol
+	
 
 def calculate_psi(sol, p):
-    psi = (
-        p["F"]
-        / (p["C_0"] * p["S"])
-        * (sol["V"] * (sol["H"] + sol["K"] + sol["Na"] - sol["Cl"]) - p["B"] * p["V_0"])
-    )
-    psi_tot = psi + p["psi_o"] - p["psi_i"]
-    return (psi, psi_tot)
+	psi = p['F'] / (p['C_0'] * p['S']) * (sol['V'] * (sol['H'] + sol['K'] + sol['Na'] - sol['Cl']) - p['B'] * p['V_0'])
+	psi_tot = psi + p['psi_o'] - p['psi_i']
+	return (psi, psi_tot)
+
+
+
+
+
+
