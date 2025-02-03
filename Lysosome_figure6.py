@@ -8,7 +8,7 @@ from scipy.interpolate import RegularGridInterpolator
 
 t_start = 0
 t_stop = 2000
-dt = 0.002
+dt = 0.02
 t = np.arange(start=t_start, stop=t_stop, step=dt)
 
 with open("input.yml", "r") as f:
