@@ -426,7 +426,7 @@ def bareSV_model(y: np.ndarray, t: np.ndarray, p: dict):
     ## state variables extraction
     V, pH, H, Cl = y  # Ionic species are expressed in number of molecules
     # they are converted in concentrations [M]
-    V = V * 1e-15 # [um^3 to L]
+    V = V * 1e-15  # [um^3 to L]
     H = H / V / N_A
     Cl = Cl / V / N_A
 
@@ -461,7 +461,7 @@ def bareSV_model(y: np.ndarray, t: np.ndarray, p: dict):
     J_W = P_W * S * (theta * (10 ** (-pH) + K + Na + Cl) + Q / V - theta_C)
 
     ## derivatives calculation
-    dV = J_W * v_W / 1e6 * 1e15 # [L/s to um^3/s]
+    dV = J_W * v_W / 1e6 * 1e15  # [L/s to um^3/s]
     dpH = -(N_V * J_V + ClC_H * N_ClC * J_ClC + J_H) / beta / V / N_A
     dH = N_V * J_V + ClC_H * N_ClC * J_ClC + J_H
     dCl = -ClC_Cl * N_ClC * J_ClC  # + J_Cl
@@ -545,9 +545,8 @@ def extract_solution_bareSV(y, p):
     return sol
 
 
-
 def calculate_psi_bareSV(sol, p):
-	## parameters extraction
+    ## parameters extraction
     F = p["F"]  # Faraday's constant [C / mol]
     N_A = p["N_A"]  # Avogadro constant [mol^-1]
 
@@ -564,21 +563,20 @@ def calculate_psi_bareSV(sol, p):
 
     B = p["B"]  # Concentration of impermeant charges [M]
 
-    V = sol["V"] * 1e-15 # [um^3 to L]
+    V = sol["V"] * 1e-15  # [um^3 to L]
     H = sol["H"]
     Cl = sol["Cl"]
-    
+
     psi = F / (C_0 * S) * (V * (H + K + Na - Cl) - B * V_0)
     psi_tot = psi + psi_o - psi_i
 
     return (psi, psi_tot)
 
 
-
 def calculate_Hflow_bareSV(sol, p):
-	#psi, _ = calculate_psi_bareSV(sol, p)
-	
-	## parameters extraction
+    # psi, _ = calculate_psi_bareSV(sol, p)
+
+    ## parameters extraction
     # Physics constants
     k_b = p["k_b"]  # Boltzmann constant
     R = p["R"]  # Gas constant [J / (mol * K)]
@@ -629,7 +627,7 @@ def calculate_Hflow_bareSV(sol, p):
 
     # Ionic species are expressed in number of molecules
     # they are converted in concentrations [M]
-    V = sol["V"] * 1e-15 # [um^3 to L]
+    V = sol["V"] * 1e-15  # [um^3 to L]
     pH = sol["pH"]
     H = sol["H"]
     Cl = sol["Cl"]
@@ -658,22 +656,23 @@ def calculate_Hflow_bareSV(sol, p):
     gg = list()
     for i in range(len(psi)):
         if np.abs(psi[i]) > 0.01e-3:
-            gg.append( U[i] / (1 - np.exp(-U[i])) )
+            gg.append(U[i] / (1 - np.exp(-U[i])))
         else:
-            gg.append( 1 / (1 - U[i] / 2 + U[i]**2 / 6 - U[i]**3 / 24 + U[i]**4 / 120) )
+            gg.append(
+                1 / (1 - U[i] / 2 + U[i] ** 2 / 6 - U[i] ** 3 / 24 + U[i] ** 4 / 120)
+            )
     gg = np.array(gg)
 
     J_H = P_H * S * gg * (10 ** (-pHe) * np.exp(-U) - 10 ** (-pHi)) * N_A / 1000
-    
-    #dH = N_V * J_V + ClC_H * N_ClC * J_ClC + J_H
-    
-    Hflow = dict()
-    Hflow['vATPase'] = N_V * J_V
-    Hflow['ClC3'] = ClC_H * N_ClC * J_ClC
-    Hflow['leak'] = J_H
-	
-    return Hflow
 
+    # dH = N_V * J_V + ClC_H * N_ClC * J_ClC + J_H
+
+    Hflow = dict()
+    Hflow["vATPase"] = N_V * J_V
+    Hflow["ClC3"] = ClC_H * N_ClC * J_ClC
+    Hflow["leak"] = J_H
+
+    return Hflow
 
 
 def SV_model(y: np.ndarray, t: np.ndarray, p: dict):
@@ -752,30 +751,30 @@ def SV_model(y: np.ndarray, t: np.ndarray, p: dict):
     N_V = p["N_V"]  # Number of V-ATPases
     N_ClC = p["N_ClC"]  # Number of ClC-7 antiporters
     J_VATP = p["J_VATP"]  # V-ATPase flux [H+/s] (interpolator object)
-    N_VGAT = p["N_VGAT"] # Number of GABA transporters VGAT
-    N_VGLUT = p["N_VGLUT"] # Number of glutamate transporters VGLUT-1
+    N_VGAT = p["N_VGAT"]  # Number of GABA transporters VGAT
+    N_VGLUT = p["N_VGLUT"]  # Number of glutamate transporters VGLUT-1
 
     # ClC-7 pump stoichiometry
     ClC_Cl = p["ClC_Cl"]  # ClC-7 Cl- Stoichiometry
     ClC_H = p["ClC_H"]  # ClC-7 H+ Stoichiometry
-    
+
     # VGAT transporter stoichiometry
-    VGAT_GABA = p["VGAT_GABA"] # VGAT GABA Stoichiometry
-    VGAT_H = p["VGAT_H"] # VGAT H+ Stoichiometry
+    VGAT_GABA = p["VGAT_GABA"]  # VGAT GABA Stoichiometry
+    VGAT_H = p["VGAT_H"]  # VGAT H+ Stoichiometry
 
     # VGLUT-1 transporter stoichiometry
-    VGLUT_GLUT = p["VGLUT_GLUT"] # VGLUT gluatamate Stoichiometry
-    VGLUT_H = p["VGLUT_H"] # VGLUT H+ Stoichiometry
+    VGLUT_GLUT = p["VGLUT_GLUT"]  # VGLUT gluatamate Stoichiometry
+    VGLUT_H = p["VGLUT_H"]  # VGLUT H+ Stoichiometry
 
     # Neurotransmitters trasnsport rates
-    k_GABA = p["k_GABA"] # GABA transport rate [s^-1]
-    k_GLUT = p["k_GLUT"] # Glutamate transport rate [s^-1]
+    k_GABA = p["k_GABA"]  # GABA transport rate [s^-1]
+    k_GLUT = p["k_GLUT"]  # Glutamate transport rate [s^-1]
 
     ## state variables extraction
     V, pH, H, Cl, GABA, GLUT = y  # Ionic species are expressed in number of molecules
     # they are converted in concentrations [M]
-    #print(GABA)
-    V = V * 1e-15 # [um^3 to L]
+    # print(GABA)
+    V = V * 1e-15  # [um^3 to L]
     H = H / V / N_A
     Cl = Cl / V / N_A
     GABA = GABA / V / N_A
@@ -792,7 +791,7 @@ def SV_model(y: np.ndarray, t: np.ndarray, p: dict):
 
     ## parts calculation
     psi = F / (C_0 * S) * (V * (H + K + Na - Cl - GLUT) - B * V_0)
-    #print('psi = ', psi)
+    # print('psi = ', psi)
     U = psi / RTF
     a = -0.3
     b = -1.5e-5
@@ -811,40 +810,49 @@ def SV_model(y: np.ndarray, t: np.ndarray, p: dict):
     J_H = P_H * S * gg * (10 ** (-pHe) * np.exp(-U) - 10 ** (-pHi)) * N_A / 1000
     J_Cl = P_Cl * S * gg * (Cle - Cli * np.exp(-U)) * N_A / 1000
     J_W = P_W * S * (theta * (10 ** (-pH) + K + Na + Cl) + Q / V - theta_C)
-    
-    #delta_u_H = 6.4 - pH if pH < 6.4 else 0
-    #delta_u_H = 2.3 * RTF * 1e3 * (pHe - pH) # + psi * 1e3
-    #J_GABA = k_GABA*10 * delta_u_H
-    #print(delta_u_H)
+
+    # delta_u_H = 6.4 - pH if pH < 6.4 else 0
+    # delta_u_H = 2.3 * RTF * 1e3 * (pHe - pH) # + psi * 1e3
+    # J_GABA = k_GABA*10 * delta_u_H
+    # print(delta_u_H)
     ### option 1 (works)
-    #J_GABA = N_VGAT * k_GABA * (10 ** (-pH)) * 1.2e8
-    #dGABA = VGAT_GABA * J_GABA - GABA * V * N_A / 100
+    # J_GABA = N_VGAT * k_GABA * (10 ** (-pH)) * 1.2e8
+    # dGABA = VGAT_GABA * J_GABA - GABA * V * N_A / 100
     ###
     ### option 2
-    #V_max = 75
-    #K_M = (10 ** (-6.0))/1
-    #J_GABA = N_VGAT * k_GABA * V_max * (10 ** (-pH)) / (K_M + (10 ** (-pH)))
-    #dGABA = VGAT_GABA * J_GABA - GABA * V * N_A / 100
+    # V_max = 75
+    # K_M = (10 ** (-6.0))/1
+    # J_GABA = N_VGAT * k_GABA * V_max * (10 ** (-pH)) / (K_M + (10 ** (-pH)))
+    # dGABA = VGAT_GABA * J_GABA - GABA * V * N_A / 100
     ###
     T = 60
-    J_GABA = k_GABA * (1-np.exp(-t/35)) #* (t/T) if t < T else k_GABA #* 1 / (1 + np.exp(-10*(6.8-pH))) # * (1 + 10*(6.4 - pH))
-    #print(J_GABA)
+    J_GABA = k_GABA * (
+        1 - np.exp(-t / 35)
+    )  # * (t/T) if t < T else k_GABA #* 1 / (1 + np.exp(-10*(6.8-pH))) # * (1 + 10*(6.4 - pH))
+    # print(J_GABA)
     J_GLUT = k_GLUT
 
     ## derivatives calculation
-    H_tot = N_V * J_V + ClC_H * N_ClC * J_ClC + J_H - VGAT_H * N_VGAT * J_GABA - VGLUT_H * N_VGLUT * J_GLUT
-    dV = J_W * v_W / 1e6 * 1e15 # [L/s to um^3/s]
-    dpH = - H_tot / beta / V / N_A
+    H_tot = (
+        N_V * J_V
+        + ClC_H * N_ClC * J_ClC
+        + J_H
+        - VGAT_H * N_VGAT * J_GABA
+        - VGLUT_H * N_VGLUT * J_GLUT
+    )
+    dV = J_W * v_W / 1e6 * 1e15  # [L/s to um^3/s]
+    dpH = -H_tot / beta / V / N_A
     dH = H_tot
-    dCl = -ClC_Cl * N_ClC * J_ClC - VGLUT_GLUT * N_VGLUT * J_GLUT #+ J_Cl
-    #dGABA = VGAT_GABA * J_GABA - GABA * V * N_A / 100
-    dGABA = VGAT_GABA * N_VGAT * J_GABA #- GABA * V * N_A * k_GABA / 5000 #* 1/25 #tau=25
+    dCl = -ClC_Cl * N_ClC * J_ClC - VGLUT_GLUT * N_VGLUT * J_GLUT  # + J_Cl
+    # dGABA = VGAT_GABA * J_GABA - GABA * V * N_A / 100
+    dGABA = (
+        VGAT_GABA * N_VGAT * J_GABA
+    )  # - GABA * V * N_A * k_GABA / 5000 #* 1/25 #tau=25
     dGLUT = VGLUT_GLUT * N_VGLUT * J_GLUT - GLUT * V * N_A * k_GLUT * N_VGLUT / 1800
-    #print(dGABA)
+    # print(dGABA)
 
     dy = (dV, dpH, dH, dCl, dGABA, dGLUT)
     return np.array(dy)
-
 
 
 def SV_model_constant(y: np.ndarray, t: np.ndarray, p: dict):
@@ -923,31 +931,32 @@ def SV_model_constant(y: np.ndarray, t: np.ndarray, p: dict):
     N_V = p["N_V"]  # Number of V-ATPases
     N_ClC = p["N_ClC"]  # Number of ClC-7 antiporters
     J_VATP = p["J_VATP"]  # V-ATPase flux [H+/s] (interpolator object)
-    N_VGAT = p["N_VGAT"] # Number of GABA transporters VGAT
-    N_VGLUT = p["N_VGLUT"] # Number of glutamate transporters VGLUT-1
+    N_VGAT = p["N_VGAT"]  # Number of GABA transporters VGAT
+    N_VGLUT = p["N_VGLUT"]  # Number of glutamate transporters VGLUT-1
 
     # ClC-7 pump stoichiometry
     ClC_Cl = p["ClC_Cl"]  # ClC-7 Cl- Stoichiometry
     ClC_H = p["ClC_H"]  # ClC-7 H+ Stoichiometry
-    
+
     # VGAT transporter stoichiometry
-    VGAT_GABA = p["VGAT_GABA"] # VGAT GABA Stoichiometry
-    VGAT_H = p["VGAT_H"] # VGAT H+ Stoichiometry
+    VGAT_GABA = p["VGAT_GABA"]  # VGAT GABA Stoichiometry
+    VGAT_H = p["VGAT_H"]  # VGAT H+ Stoichiometry
 
     # VGLUT-1 transporter stoichiometry
-    VGLUT_GLUT = p["VGLUT_GLUT"] # VGLUT gluatamate Stoichiometry
-    VGLUT_H = p["VGLUT_H"] # VGLUT H+ Stoichiometry
+    VGLUT_GLUT = p["VGLUT_GLUT"]  # VGLUT gluatamate Stoichiometry
+    VGLUT_H = p["VGLUT_H"]  # VGLUT H+ Stoichiometry
 
     # Neurotransmitters trasnsport rates
-    k_GABA = p["k_GABA"] # GABA transport rate [s^-1]
-    k_GLUT = p["k_GLUT"] # Glutamate transport rate [s^-1]
-    tau_GLUT = p["tau_GLUT"] # Glutamate efflux time constant [s]
+    k_GABA = p["k_GABA"]  # GABA transport rate [s^-1]
+    k_GLUT = p["k_GLUT"]  # Glutamate transport rate [s^-1]
+    tau_GABA = p["tau_GABA"]  # GABA efflux time constant [s]
+    tau_GLUT = p["tau_GLUT"]  # Glutamate efflux time constant [s]
 
     ## state variables extraction
     V, pH, H, Cl, GABA, GLUT = y  # Ionic species are expressed in number of molecules
     # they are converted in concentrations [M]
-    #print(GABA)
-    V = V * 1e-15 # [um^3 to L]
+    # print(GABA)
+    V = V * 1e-15  # [um^3 to L]
     H = H / V / N_A
     Cl = Cl / V / N_A
     GABA = GABA / V / N_A
@@ -964,7 +973,7 @@ def SV_model_constant(y: np.ndarray, t: np.ndarray, p: dict):
 
     ## parts calculation
     psi = F / (C_0 * S) * (V * (H + K + Na - Cl - GLUT) - B * V_0)
-    #print('psi = ', psi)
+    # print('psi = ', psi)
     U = psi / RTF
     a = -0.3
     b = -1.5e-5
@@ -983,23 +992,27 @@ def SV_model_constant(y: np.ndarray, t: np.ndarray, p: dict):
     J_H = P_H * S * gg * (10 ** (-pHe) * np.exp(-U) - 10 ** (-pHi)) * N_A / 1000
     # J_Cl = P_Cl * S * gg * (Cle - Cli * np.exp(-U)) * N_A / 1000
     J_W = P_W * S * (theta * (10 ** (-pH) + K + Na + Cl) + Q / V - theta_C)
-    
-    J_GABA = k_GABA #* (pH-6.4) #(1 / (1 + np.exp(-10*(pH-6.4))))
-    J_GLUT = k_GLUT #* (pH-5.8) #(1 / (1 + np.exp(-10*(pH-5.8))))
+
+    J_GABA = k_GABA * (
+        1 - np.exp(-t / tau_GABA)
+    )  # * (pH-6.4) #(1 / (1 + np.exp(-10*(pH-6.4))))
+    J_GLUT = k_GLUT  # * (pH-5.8) #(1 / (1 + np.exp(-10*(pH-5.8))))
+    # print(J_GABA)
 
     ## derivatives calculation
-    H_tot = N_V * J_V + ClC_H * N_ClC * J_ClC + J_H - VGAT_H * N_VGAT * J_GABA #- VGLUT_H * N_VGLUT * J_GLUT
-    dV = J_W * v_W / 1e6 * 1e15 # [L/s to um^3/s]
-    dpH = - H_tot / beta / V / N_A
+    H_tot = (
+        N_V * J_V + ClC_H * N_ClC * J_ClC + J_H - VGAT_H * N_VGAT * J_GABA
+    )  # - VGLUT_H * N_VGLUT * J_GLUT
+    dV = J_W * v_W / 1e6 * 1e15  # [L/s to um^3/s]
+    dpH = -H_tot / beta / V / N_A
     dH = H_tot
-    dCl = -ClC_Cl * N_ClC * J_ClC - VGLUT_GLUT * N_VGLUT * J_GLUT # + J_Cl
-    dGABA = VGAT_GABA * N_VGAT * J_GABA
-    dGLUT = VGLUT_GLUT * N_VGLUT * J_GLUT - GLUT * V * N_A / tau_GLUT#* k_GLUT * N_VGLUT / 1800
-    #print(dGABA)
+    dCl = -ClC_Cl * N_ClC * J_ClC - VGLUT_GLUT * N_VGLUT * J_GLUT  # + J_Cl
+    dGABA = VGAT_GABA * N_VGAT * J_GABA - GABA * V * N_A / tau_GABA  # / 5000 * k_GABA
+    dGLUT = VGLUT_GLUT * N_VGLUT * J_GLUT - GLUT * V * N_A / tau_GLUT
+    # print(dGABA)
 
     dy = (dV, dpH, dH, dCl, dGABA, dGLUT)
     return np.array(dy)
-
 
 
 def set_SV_model(p, init):
@@ -1063,7 +1076,6 @@ def set_SV_model(p, init):
     return (p, y0)
 
 
-
 def extract_solution_SV(y, p):
     N_A = p["N_A"]
     V = y[:, 0]
@@ -1085,9 +1097,8 @@ def extract_solution_SV(y, p):
     return sol
 
 
-
 def calculate_psi_SV(sol, p):
-	## parameters extraction
+    ## parameters extraction
     F = p["F"]  # Faraday's constant [C / mol]
     N_A = p["N_A"]  # Avogadro constant [mol^-1]
 
@@ -1104,23 +1115,13 @@ def calculate_psi_SV(sol, p):
 
     B = p["B"]  # Concentration of impermeant charges [M]
 
-    V = sol["V"] * 1e-15 # [um^3 to L]
+    V = sol["V"] * 1e-15  # [um^3 to L]
     H = sol["H"]
     Cl = sol["Cl"]
     GABA = sol["GABA"] / V / N_A
     GLUT = sol["GLUT"] / V / N_A
-    
+
     psi = F / (C_0 * S) * (V * (H + K + Na - Cl - GLUT) - B * V_0)
     psi_tot = psi + psi_o - psi_i
 
     return (psi, psi_tot)
-
-
-
-
-
-
-
-
-
-
