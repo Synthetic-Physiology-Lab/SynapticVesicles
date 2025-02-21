@@ -15,14 +15,14 @@ p:
   pH_C: 7.4 # Cytosolic pH []
   K_C: 145.0e-3 # Cytosolic K+ concentration [M]
   Na_C: 10.0e-3 # Cytosolic Na+ concentration [M]
-  Cl_C: 5.0e-3 # Cytosolic Cl- concentration [M]
+  Cl_C:  5.0e-3 # Cytosolic Cl- concentration [M]
   
   # Luminal concentrations
   K_L: 5.0e-3 # Cytosolic K+ concentration [M]
   Na_L: 145.0e-3 # Cytosolic Na+ concentration [M]
 
   # Permeabilities
-  P_H: 9.458416584680853e-4 # H+ permeability [cm/s]
+  P_H: 1.0e-3 # H+ permeability [cm/s]
   P_Cl: 1.2e-5 # Cl- permeability [cm/s]
   P_W: 0 # 0.052 # H2O permeability [cm/s]
 
@@ -67,6 +67,8 @@ p:
   # Neurotransmitters trasnsport rates
   k_GABA: 1 # GABA transport rate [s^-1]
   k_GLUT: 1 # Glutamate transport rate [s^-1]
+  tau_GABA: 1 # VGAT time constant [s]
+  tau_GABA_2: 1 # GABA efflux time constant [s]
   tau_GLUT: 1 # Glutamate efflux time constant [s]
 
 
@@ -77,7 +79,7 @@ init:
   # Luminal concentrations
   H_L: 0.0 # Luminal H+ concentration [M]
   pH_L: 7.4 # Luminal pH []
-  Cl_L: 50.0e-3 # Luminal Cl- concentration [M]
+  Cl_L: 50.0e-3 # Luminal Cl- concentration [M] 130.0e-3 
   GABA_L: 0 # Luminal GABA concentration [M]
   GLUT_L: 0 # Luminal GLUT concentration [M]
   psi: 0.0 # Voltage difference across lipid bilayer [V]

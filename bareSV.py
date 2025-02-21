@@ -117,6 +117,7 @@ P = p.copy()
 P["P_H"] = P_H_ref
 
 INIT = init.copy()
+INIT["pH_L"] = 6.6
 
 PP, y0 = models.set_bareSV_model(P, INIT)
 
@@ -156,6 +157,7 @@ P = p.copy()
 P["P_H"] = P_H_ref
 
 INIT = init.copy()
+INIT["pH_L"] = 6.6
 
 pH_SS = list()
 psi_SS = list()
@@ -179,11 +181,25 @@ fig, ax1 = plt.subplots()
 beta = np.array(beta)
 pH_SS = np.array(pH_SS)
 psi_SS = np.array(psi_SS)
-diff_pH_perc = np.abs(pH_SS[beta == 20] - pH_SS[beta == 60]) / pH_SS[beta == 40] * 100
-diff_psi_perc = (
-    np.abs(psi_SS[beta == 20] - psi_SS[beta == 60]) / psi_SS[beta == 40] * 100
+
+RMSE_pH = np.sqrt(
+    np.mean((pH_SS[(beta >= 20) & (beta <= 60)] - pH_SS[beta == 40]) ** 2)
 )
-print(diff_pH_perc, diff_psi_perc)
+RMSE_psi = np.sqrt(
+    np.mean((psi_SS[(beta >= 20) & (beta <= 60)] - psi_SS[beta == 40]) ** 2)
+)
+
+RMSE_pH_perc = RMSE_pH / pH_SS[beta == 40] * 100
+RMSE_psi_perc = RMSE_psi / psi_SS[beta == 40] * 100
+
+# diff_pH_perc = np.abs(pH_SS[beta == 20] - pH_SS[beta == 60]) / pH_SS[beta == 40] * 100
+# diff_psi_perc = (
+#    np.abs(psi_SS[beta == 20] - psi_SS[beta == 60]) / psi_SS[beta == 40] * 100
+# )
+
+# print(RMSE_pH, RMSE_psi)
+print(RMSE_pH_perc, RMSE_psi_perc)
+# print(diff_pH_perc, diff_psi_perc)
 
 color = "tab:blue"
 ax1.plot(beta, pH_SS, color=color)
@@ -212,6 +228,7 @@ P = p.copy()
 P["P_H"] = P_H_ref
 
 INIT = init.copy()
+INIT["pH_L"] = 6.6
 
 PP, y0 = models.set_bareSV_model(P, INIT)
 
@@ -260,6 +277,7 @@ P["P_H"] = P_H_ref
 P["N_ClC"] = 0
 
 INIT = init.copy()
+INIT["pH_L"] = 6.6
 
 PP, y0 = models.set_bareSV_model(P, INIT)
 
@@ -308,6 +326,7 @@ P["P_H"] = P_H_ref
 P["N_V"] = 0
 
 INIT = init.copy()
+INIT["pH_L"] = 6.6
 
 PP, y0 = models.set_bareSV_model(P, INIT)
 
