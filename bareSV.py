@@ -253,17 +253,17 @@ ax1.tick_params(axis="y", labelcolor=color)
 
 color = "tab:orange"
 ax2 = ax1.twinx()
-ax2.plot(t[t <= 100], psi * 1e3, color=color)
-ax2.set_ylim(0, 110)
+ax2.plot(t[t <= 100], psi_tot * 1e3, color=color)
+ax2.set_ylim(0, 60)
 ax2.set_ylabel("psi [mV]", color=color)
 ax2.tick_params(axis="y", labelcolor=color)
 
 for key in H_flow.keys():
     ax[1].plot(t[t <= 100], H_flow[key], label=key)
-    ax[1].legend()
-    ax[1].set_xlabel("Time [s]")
-    ax[1].set_ylabel("H+ flow [H+/s]")
-    ax[1].set_ylim(-120, 120)
+# ax[1].legend()
+ax[1].set_xlabel("Time [s]")
+ax[1].set_ylabel("H+ flow [H+/s]")
+ax[1].set_ylim(-120, 120)
 
 fig.tight_layout()
 plt.show()
@@ -302,17 +302,17 @@ ax1.tick_params(axis="y", labelcolor=color)
 
 color = "tab:orange"
 ax2 = ax1.twinx()
-ax2.plot(t[t <= 100], psi * 1e3, color=color)
-ax2.set_ylim(0, 210)
+ax2.plot(t[t <= 100], psi_tot * 1e3, color=color)
+ax2.set_ylim(0, 160)
 ax2.set_ylabel("psi [mV]", color=color)
 ax2.tick_params(axis="y", labelcolor=color)
 
 for key in H_flow.keys():
     ax[1].plot(t[t <= 100], H_flow[key], label=key)
-    ax[1].legend()
-    ax[1].set_xlabel("Time [s]")
-    ax[1].set_ylabel("H+ flow [H+/s]")
-    ax[1].set_ylim(-20, 120)
+# ax[1].legend()
+ax[1].set_xlabel("Time [s]")
+ax[1].set_ylabel("H+ flow [H+/s]")
+ax[1].set_ylim(-50, 120)
 
 fig.tight_layout()
 plt.show()
@@ -351,17 +351,17 @@ ax1.tick_params(axis="y", labelcolor=color)
 
 color = "tab:orange"
 ax2 = ax1.twinx()
-ax2.plot(t[t <= 100], psi * 1e3, color=color)
-ax2.set_ylim(0, 110)
+ax2.plot(t[t <= 100], psi_tot * 1e3, color=color)
+ax2.set_ylim(0, 60)
 ax2.set_ylabel("psi [mV]", color=color)
 ax2.tick_params(axis="y", labelcolor=color)
 
 for key in H_flow.keys():
     ax[1].plot(t[t <= 100], H_flow[key], label=key)
-    ax[1].legend()
-    ax[1].set_xlabel("Time [s]")
-    ax[1].set_ylabel("H+ flow [H+/s]")
-    ax[1].set_ylim(-20, 60)
+ax[1].legend()
+ax[1].set_xlabel("Time [s]")
+ax[1].set_ylabel("H+ flow [H+/s]")
+ax[1].set_ylim(-30, 60)
 
 fig.tight_layout()
 plt.show()
