@@ -47,7 +47,7 @@ p:
   theta_C: 290.0e-03 # Cytoplasmic osmolyte concentration [M]
 
   # Pumps quantity
-  N_V: 1 # Number of V-ATPases
+  N_V: 1.4 # Number of V-ATPases
   N_ClC: 2 # Number of ClC-3 antiporters
   N_VGAT: 1 # Number of GABA transporters VGAT
   N_VGLUT: 1 # Number of glutamate transporters VGLUT-1

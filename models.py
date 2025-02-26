@@ -830,7 +830,7 @@ def SV_model(y: np.ndarray, t: np.ndarray, p: dict):
     J_W = P_W * S * (theta * (10 ** (-pH) + K + Na + Cl) + Q / V - theta_C)
 
     J_GABA = k_GABA * (1 - np.exp(-t / tau_GABA))
-    J_GLUT = k_GLUT
+    J_GLUT = k_GLUT * (pH - 5.8)
 
     ## derivatives calculation
     H_tot = (
@@ -845,8 +845,7 @@ def SV_model(y: np.ndarray, t: np.ndarray, p: dict):
     dH = H_tot
     dCl = -ClC_Cl * N_ClC * J_ClC - VGLUT_GLUT * N_VGLUT * J_GLUT  # + J_Cl
     dGABA = VGAT_GABA * N_VGAT * J_GABA - GABA * V * N_A / tau_GABA_2
-    dGLUT = VGLUT_GLUT * N_VGLUT * J_GLUT - GLUT * V * N_A * k_GLUT * N_VGLUT / 1800
-    # print(dGABA)
+    dGLUT = VGLUT_GLUT * N_VGLUT * J_GLUT
 
     dy = (dV, dpH, dH, dCl, dGABA, dGLUT)
     return np.array(dy)
@@ -1004,7 +1003,10 @@ def SV_model_constant(y: np.ndarray, t: np.ndarray, p: dict):
     J_W = P_W * S * (theta * (10 ** (-pH) + K + Na + Cl) + Q / V - theta_C)
 
     # delta_u_H = 2.3 * RTF * 1e3 * (pHe - pH) + psi * 1e3
-    J_GABA = k_GABA * (1 - np.exp(-t / tau_GABA))
+    if tau_GABA == 0:
+        J_GABA = k_GABA
+    elif tau_GABA > 0:
+        J_GABA = k_GABA * (1 - np.exp(-t / tau_GABA))
     # * (pH-6.4) #(1 / (1 + np.exp(-10*(pH-6.4))))
     J_GLUT = k_GLUT  # (1 / (1 + np.exp(-10*(pH-5.8))))
     # print(J_GABA)
@@ -1074,7 +1076,7 @@ def SV_model_constant_modified(y: np.ndarray, t: np.ndarray, p: dict):
 
     # Permeabilities
     P_H = p["P_H"]  # H+ permeability [cm/s]
-    # P_Cl = p["P_Cl"]  # Cl- permeability [cm/s]
+    P_Cl = p["P_Cl"]  # Cl- permeability [cm/s]
     P_W = p["P_W"]  # H2O permeability [cm/s]
 
     # Capacitance density
@@ -1179,7 +1181,9 @@ def SV_model_constant_modified(y: np.ndarray, t: np.ndarray, p: dict):
         gg = 1 / (1 - U / 2 + U**2 / 6 - U**3 / 24 + U**4 / 120)
 
     J_H = P_H * S * gg * (10 ** (-pHe) * np.exp(-U) - 10 ** (-pHi)) * N_A / 1000
-    # J_Cl = P_Cl * S * gg * (Cle - Cli * np.exp(-U)) * N_A / 1000
+    J_Cl = P_Cl * S * gg * (Cle - Cli * np.exp(-U)) * N_A / 1000
+    J_Cl = J_Cl * N_VGLUT
+    print(J_Cl, J_H)
     J_W = P_W * S * (theta * (10 ** (-pH) + K + Na + Cl) + Q / V - theta_C)
 
     # delta_u_H = 2.3 * RTF * 1e3 * (pHe - pH) + psi * 1e3
@@ -1187,11 +1191,10 @@ def SV_model_constant_modified(y: np.ndarray, t: np.ndarray, p: dict):
         k_GABA
         * (1 - np.exp(-t / tau_GABA))
         * (1 / (1 + np.exp(-10 * (10000 - GABA * V * N_A))))
-    )  # * (pH-6.4)
-    # * (pH-6.4) #(1 / (1 + np.exp(-10*(pH-6.4))))
-    J_GLUT = k_GLUT * (
-        pH - 5.8
-    )  # * (1 / (1 + np.exp(-10*(2000-GLUT*V*N_A)))) #(1 / (1 + np.exp(-10*(pH-5.8))))
+    )
+    # J_GLUT = k_GLUT * (pH - 5.8)
+    J_GLUT = k_GLUT * (-(J_Cl + J_H))
+    # * (1 / (1 + np.exp(-10*(2000-GLUT*V*N_A)))) #(1 / (1 + np.exp(-10*(pH-5.8))))
     # print(J_GABA)
 
     ## derivatives calculation
@@ -1205,7 +1208,7 @@ def SV_model_constant_modified(y: np.ndarray, t: np.ndarray, p: dict):
     dV = J_W * v_W / 1e6 * 1e15  # [L/s to um^3/s]
     dpH = -H_tot / beta / V / N_A
     dH = H_tot
-    dCl = -ClC_Cl * N_ClC * J_ClC - VGLUT_GLUT * N_VGLUT * J_GLUT  # + J_Cl
+    dCl = -ClC_Cl * N_ClC * J_ClC + J_Cl  # - VGLUT_GLUT * N_VGLUT * J_GLUT  # + J_Cl
     dGABA = (
         VGAT_GABA * N_VGAT * J_GABA
     )  # - GABA * V * N_A / tau_GABA_2 # / 5000 * k_GABA
