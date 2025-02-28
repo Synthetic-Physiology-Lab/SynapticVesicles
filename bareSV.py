@@ -69,8 +69,9 @@ P_H_ref = H_P[ind] + ((H_P[ind + 1] - H_P[ind]) / (pH_SS[ind + 1] - pH_SS[ind]))
 )
 print(P_H_ref)
 
-ax.plot(H_P, pH_SS)
-ax.plot([6e-5, P_H_ref, P_H_ref], [pH_ref, pH_ref, 4.5], color="k", linestyle="--")
+color = "gray"
+ax.plot(H_P, pH_SS, color=color)
+ax.plot([6e-5, P_H_ref, P_H_ref], [pH_ref, pH_ref, 4.5], color="k", linestyle=":")
 ax.set_xlim(6e-5, 6e-3)
 ax.set_ylim(4.5, 7.5)
 ax.set_xlabel("H+ permeability [cm/s]")
@@ -80,6 +81,26 @@ plt.show()
 ##################################################################################################
 ######################################## time constant ###########################################
 ##################################################################################################
+
+exp_pH_bareSV = pd.read_csv("experimental_pH_bareSV.csv", header=None)
+exp_pH_bareSV = np.array(exp_pH_bareSV)
+# print(exp_pH_bareSV)
+t_exp = exp_pH_bareSV[:, 0]
+t_exp = t_exp - t_exp[0]
+pH_exp = exp_pH_bareSV[:, 1]
+
+params = lmfit.Parameters()
+params.add("tau", value=0.1, min=0)
+
+fit_result = lmfit.minimize(residual_pH, params, args=(t_exp,), kws={"data": pH_exp})
+print(lmfit.fit_report(fit_result))
+parvals = fit_result.params.valuesdict()
+tau_exp_bareSV = parvals["tau"]
+
+plt.plot(t_exp, pH_exp)
+plt.plot(t_exp, pH_exp_decay(t_exp, tau_exp_bareSV))
+plt.show()
+
 
 P = p.copy()
 P["P_H"] = P_H_ref
@@ -113,6 +134,15 @@ plt.show()
 ########################################## FIGURE 2e #############################################
 ##################################################################################################
 
+t_start = 0
+t_stop = 100
+dt = 0.02
+t = np.arange(start=t_start, stop=t_stop, step=dt)
+
+
+data = pH_exp_decay(t, tau=tau_exp_bareSV)
+
+
 P = p.copy()
 P["P_H"] = P_H_ref
 
@@ -121,7 +151,7 @@ INIT["pH_L"] = 6.6
 
 PP, y0 = models.set_bareSV_model(P, INIT)
 
-y = spi.odeint(models.bareSV_model, y0, t[t <= 100], args=(PP,))
+y = spi.odeint(models.bareSV_model, y0, t, args=(PP,))
 
 sol = models.extract_solution_bareSV(y, PP)
 
@@ -129,17 +159,21 @@ psi, psi_tot = models.calculate_psi_bareSV(sol, PP)
 
 fig, ax1 = plt.subplots()
 
-color = "tab:blue"
-ax1.plot(t[t <= 100], sol["pH"], color=color)
+color = "gray"
+ax1.plot(t, sol["pH"], color=color)
+ax1.plot(
+    t, data, color="tab:blue", linestyle=":", label="Experimental pH", linewidth=2.5
+)
 # ax1.set_xlim(0, 100)
 # ax1.set_ylim(5.5, 7.5)
 ax1.set_xlabel("time [s]")
 ax1.set_ylabel("pH_L []", color=color)
 ax1.tick_params(axis="y", labelcolor=color)
+ax1.legend()
 
-color = "tab:orange"
+color = "black"
 ax2 = ax1.twinx()
-ax2.plot(t[t <= 100], psi_tot * 1e3, color=color)
+ax2.plot(t, psi_tot * 1e3, color=color, linestyle="--")
 # ax2.set_ylim(0, 80)
 ax2.set_ylabel("psi [mV]", color=color)
 ax2.tick_params(axis="y", labelcolor=color)
@@ -201,18 +235,18 @@ RMSE_psi_perc = RMSE_psi / psi_SS[beta == 40] * 100
 print(RMSE_pH_perc, RMSE_psi_perc)
 # print(diff_pH_perc, diff_psi_perc)
 
-color = "tab:blue"
+color = "gray"
 ax1.plot(beta, pH_SS, color=color)
-ax1.plot([20, 20, 60, 60, 20], [5.9, 6.05, 6.05, 5.9, 5.9], color="k", linestyle="--")
+ax1.plot([20, 20, 60, 60, 20], [5.9, 6.05, 6.05, 5.9, 5.9], color="k", linestyle=":")
 ax1.set_xlim(0.5, 160)
 # ax1.set_ylim(5.9, 6.5)
 ax1.set_xlabel("Buffering capacity [mM/pH]")
 ax1.set_ylabel("Final pH_L []", color=color)
 ax1.tick_params(axis="y", labelcolor=color)
 
-color = "tab:orange"
+color = "black"
 ax2 = ax1.twinx()
-ax2.plot(beta, psi_SS, color=color)
+ax2.plot(beta, psi_SS, color=color, linestyle="--")
 # ax2.set_ylim(35, 65)
 ax2.set_ylabel("Final psi [mV]", color=color)
 ax2.tick_params(axis="y", labelcolor=color)
@@ -232,7 +266,7 @@ INIT["pH_L"] = 6.6
 
 PP, y0 = models.set_bareSV_model(P, INIT)
 
-y = spi.odeint(models.bareSV_model, y0, t[t <= 100], args=(PP,))
+y = spi.odeint(models.bareSV_model, y0, t, args=(PP,))
 
 sol = models.extract_solution_bareSV(y, PP)
 
@@ -242,28 +276,30 @@ H_flow = models.calculate_Hflow_bareSV(sol, PP)
 
 fig, ax = plt.subplots(2, 1)
 
-color = "tab:blue"
+color = "gray"
 ax1 = ax[0]
-ax1.plot(t[t <= 100], sol["pH"], color=color)
-# ax1.set_xlim(0.5, 160)
+ax1.plot(t, sol["pH"], color=color)
 ax1.set_ylim(5.5, 8)
 ax1.set_xlabel("Time [s]")
 ax1.set_ylabel("pH_L []", color=color)
 ax1.tick_params(axis="y", labelcolor=color)
 
-color = "tab:orange"
+color = "black"
 ax2 = ax1.twinx()
-ax2.plot(t[t <= 100], psi_tot * 1e3, color=color)
-ax2.set_ylim(0, 60)
+ax2.plot(t, psi_tot * 1e3, color=color, linestyle="--")
+ax2.set_ylim(-10, 100)
 ax2.set_ylabel("psi [mV]", color=color)
 ax2.tick_params(axis="y", labelcolor=color)
 
-for key in H_flow.keys():
-    ax[1].plot(t[t <= 100], H_flow[key], label=key)
+colors = ["orange", "purple", "black"]
+for i in range(len(H_flow.keys())):
+    key = list(H_flow.keys())[i]
+    color = colors[i]
+    ax[1].plot(t, H_flow[key], label=key, color=color)
 # ax[1].legend()
 ax[1].set_xlabel("Time [s]")
 ax[1].set_ylabel("H+ flow [H+/s]")
-ax[1].set_ylim(-120, 120)
+ax[1].set_ylim(-150, 160)
 
 fig.tight_layout()
 plt.show()
@@ -289,30 +325,33 @@ psi, psi_tot = models.calculate_psi_bareSV(sol, PP)
 
 H_flow = models.calculate_Hflow_bareSV(sol, PP)
 
+
 fig, ax = plt.subplots(2, 1)
 
-color = "tab:blue"
+color = "gray"
 ax1 = ax[0]
-ax1.plot(t[t <= 100], sol["pH"], color=color)
-# ax1.set_xlim(0.5, 160)
+ax1.plot(t, sol["pH"], color=color)
 ax1.set_ylim(5.5, 8)
 ax1.set_xlabel("Time [s]")
 ax1.set_ylabel("pH_L []", color=color)
 ax1.tick_params(axis="y", labelcolor=color)
 
-color = "tab:orange"
+color = "black"
 ax2 = ax1.twinx()
-ax2.plot(t[t <= 100], psi_tot * 1e3, color=color)
-ax2.set_ylim(0, 160)
+ax2.plot(t, psi_tot * 1e3, color=color, linestyle="--")
+ax2.set_ylim(-10, 100)
 ax2.set_ylabel("psi [mV]", color=color)
 ax2.tick_params(axis="y", labelcolor=color)
 
-for key in H_flow.keys():
-    ax[1].plot(t[t <= 100], H_flow[key], label=key)
+colors = ["orange", "purple", "black"]
+for i in range(len(H_flow.keys())):
+    key = list(H_flow.keys())[i]
+    color = colors[i]
+    ax[1].plot(t, H_flow[key], label=key, color=color)
 # ax[1].legend()
 ax[1].set_xlabel("Time [s]")
 ax[1].set_ylabel("H+ flow [H+/s]")
-ax[1].set_ylim(-50, 120)
+ax[1].set_ylim(-150, 160)
 
 fig.tight_layout()
 plt.show()
@@ -338,30 +377,33 @@ psi, psi_tot = models.calculate_psi_bareSV(sol, PP)
 
 H_flow = models.calculate_Hflow_bareSV(sol, PP)
 
+
 fig, ax = plt.subplots(2, 1)
 
-color = "tab:blue"
+color = "gray"
 ax1 = ax[0]
-ax1.plot(t[t <= 100], sol["pH"], color=color)
-# ax1.set_xlim(0.5, 160)
+ax1.plot(t, sol["pH"], color=color)
 ax1.set_ylim(5.5, 8)
 ax1.set_xlabel("Time [s]")
 ax1.set_ylabel("pH_L []", color=color)
 ax1.tick_params(axis="y", labelcolor=color)
 
-color = "tab:orange"
+color = "black"
 ax2 = ax1.twinx()
-ax2.plot(t[t <= 100], psi_tot * 1e3, color=color)
-ax2.set_ylim(0, 60)
+ax2.plot(t, psi_tot * 1e3, color=color, linestyle="--")
+ax2.set_ylim(-10, 100)
 ax2.set_ylabel("psi [mV]", color=color)
 ax2.tick_params(axis="y", labelcolor=color)
 
-for key in H_flow.keys():
-    ax[1].plot(t[t <= 100], H_flow[key], label=key)
+colors = ["orange", "purple", "black"]
+for i in range(len(H_flow.keys())):
+    key = list(H_flow.keys())[i]
+    color = colors[i]
+    ax[1].plot(t, H_flow[key], label=key, color=color)
 ax[1].legend()
 ax[1].set_xlabel("Time [s]")
 ax[1].set_ylabel("H+ flow [H+/s]")
-ax[1].set_ylim(-30, 60)
+ax[1].set_ylim(-150, 160)
 
 fig.tight_layout()
 plt.show()

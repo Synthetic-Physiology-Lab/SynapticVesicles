@@ -1181,9 +1181,9 @@ def SV_model_constant_modified(y: np.ndarray, t: np.ndarray, p: dict):
         gg = 1 / (1 - U / 2 + U**2 / 6 - U**3 / 24 + U**4 / 120)
 
     J_H = P_H * S * gg * (10 ** (-pHe) * np.exp(-U) - 10 ** (-pHi)) * N_A / 1000
-    J_Cl = P_Cl * S * gg * (Cle - Cli * np.exp(-U)) * N_A / 1000
-    J_Cl = J_Cl * N_VGLUT
-    print(J_Cl, J_H)
+    # J_Cl = P_Cl * S * gg * (Cle - Cli * np.exp(-U)) * N_A / 1000
+    J_Cl = N_VGLUT * P_Cl * 1e-10 * gg * (Cle - Cli * np.exp(-U)) * N_A / 1000
+    # print(GLUT, J_Cl)
     J_W = P_W * S * (theta * (10 ** (-pH) + K + Na + Cl) + Q / V - theta_C)
 
     # delta_u_H = 2.3 * RTF * 1e3 * (pHe - pH) + psi * 1e3
@@ -1192,8 +1192,8 @@ def SV_model_constant_modified(y: np.ndarray, t: np.ndarray, p: dict):
         * (1 - np.exp(-t / tau_GABA))
         * (1 / (1 + np.exp(-10 * (10000 - GABA * V * N_A))))
     )
-    # J_GLUT = k_GLUT * (pH - 5.8)
-    J_GLUT = k_GLUT * (-(J_Cl + J_H))
+    J_GLUT = k_GLUT  # * (pH - 5.8)
+    # J_GLUT = k_GLUT * J_Cl
     # * (1 / (1 + np.exp(-10*(2000-GLUT*V*N_A)))) #(1 / (1 + np.exp(-10*(pH-5.8))))
     # print(J_GABA)
 
@@ -1204,6 +1204,7 @@ def SV_model_constant_modified(y: np.ndarray, t: np.ndarray, p: dict):
         + J_H
         - VGAT_H * N_VGAT * J_GABA
         - VGLUT_H * N_VGLUT * J_GLUT
+        + GLUT * V * N_A / tau_GLUT
     )
     dV = J_W * v_W / 1e6 * 1e15  # [L/s to um^3/s]
     dpH = -H_tot / beta / V / N_A
@@ -1212,7 +1213,9 @@ def SV_model_constant_modified(y: np.ndarray, t: np.ndarray, p: dict):
     dGABA = (
         VGAT_GABA * N_VGAT * J_GABA
     )  # - GABA * V * N_A / tau_GABA_2 # / 5000 * k_GABA
-    dGLUT = VGLUT_GLUT * N_VGLUT * J_GLUT  # * (pH-5.8) #- GLUT * V * N_A / tau_GLUT
+    dGLUT = (
+        VGLUT_GLUT * N_VGLUT * J_GLUT - GLUT * V * N_A / tau_GLUT
+    )  # * (pH-5.8) #- GLUT * V * N_A / tau_GLUT
     # print(dGABA)
 
     dy = (dV, dpH, dH, dCl, dGABA, dGLUT)

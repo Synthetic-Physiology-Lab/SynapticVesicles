@@ -9,7 +9,7 @@ p:
   N_A: 6.02214076e+23 # Avogadro constant [mol^-1]
 
   # Temperature
-  T: 25.0 # Temperature [C]
+  T: 35.0 # Temperature [C]
 
   # Cytosolic concentrations
   pH_C: 7.4 # Cytosolic pH []
@@ -22,7 +22,7 @@ p:
   Na_L: 145.0e-3 # Cytosolic Na+ concentration [M]
 
   # Permeabilities
-  P_H: 1.23e-3 # H+ permeability [cm/s]
+  P_H: 1.5e-3 # H+ permeability [cm/s]
   P_Cl: 1.2e-5 # Cl- permeability [cm/s]
   P_W: 0 # 0.052 # H2O permeability [cm/s]
 
@@ -47,7 +47,7 @@ p:
   theta_C: 290.0e-03 # Cytoplasmic osmolyte concentration [M]
 
   # Pumps quantity
-  N_V: 1 # Number of V-ATPases
+  N_V: 1.4 # Number of V-ATPases
   N_ClC: 2 # Number of ClC-3 antiporters
 
   # ClC-3 pump stoichiometry

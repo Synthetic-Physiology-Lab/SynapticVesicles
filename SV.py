@@ -14,6 +14,11 @@ def pH_exp_decay(x, tau):
     return y
 
 
+def fluo_exp_decay(x, tau, k):
+    y = k * np.exp(-x / tau)
+    return y
+
+
 def residual_bare(pars, t, data, p, init):
     parvals = pars.valuesdict()
     p["P_H"] = parvals["P_H"]
@@ -36,6 +41,17 @@ def residual_pH(pars, t, data):
     return res
 
 
+def residual_fluo(pars, t, data):
+    parvals = pars.valuesdict()
+    tau = parvals["tau"]
+    k = parvals["k"]
+
+    sol = fluo_exp_decay(t, tau, k)
+
+    res = sol - data
+    return res
+
+
 def GABA_exp_decay(x, p, init):
     p["N_VGLUT"] = 0
     p["N_VGAT"] = 0
@@ -46,6 +62,13 @@ def GABA_exp_decay(x, p, init):
 
     tau = 25
     y = pH_0 + 0.42 * (1 - np.exp(-x / tau))
+    return y
+
+
+def GABA_exp_decay_2(x, tau):
+    pH_0 = pH_exp_decay(x, tau)
+    tau_alk = 25
+    y = pH_0 + 0.42 * (1 - np.exp(-x / tau_alk))
     return y
 
 
@@ -100,8 +123,8 @@ def residual_GABA_tau2(pars, t, data, p, init):
     return res
 
 
-def GLUT_exp_decay(x):
-    tau = 25
+def GLUT_exp_decay(x, tau):
+    # tau = 25
     y = 5.8 + (6.6 - 5.8) * np.exp(-x / tau)
     return y
 
@@ -122,13 +145,15 @@ def residual_GLUT(pars, t, data, p, init):
 def residual_GLUT_2(pars, t, data, p, init):
     parvals = pars.valuesdict()
     p["k_GLUT"] = parvals["k_GLUT"]
-    # p["tau_GLUT"] = parvals["tau_GLUT"]
+    p["tau_GLUT"] = parvals["tau_GLUT"]
+    p["P_Cl"] = parvals["P_Cl"]
 
     p, y0 = models.set_SV_model(p, init)
     y = spi.odeint(models.SV_model_constant_modified, y0, t, args=(p,))
     sol = models.extract_solution_SV(y, p)
 
     res = sol["pH"] - data
+    # res = np.append(sol["pH"] - data, (sol["Cl"][-1] - 0.015)/0.015)
     return res
 
 
@@ -144,7 +169,7 @@ init = p_init["init"]
 
 exp_pH_bareSV = pd.read_csv("experimental_pH_bareSV.csv", header=None)
 exp_pH_bareSV = np.array(exp_pH_bareSV)
-print(exp_pH_bareSV)
+# print(exp_pH_bareSV)
 t_exp = exp_pH_bareSV[:, 0]
 t_exp = t_exp - t_exp[0]
 pH_exp = exp_pH_bareSV[:, 1]
@@ -155,10 +180,10 @@ params.add("tau", value=0.1, min=0)
 fit_result = lmfit.minimize(residual_pH, params, args=(t_exp,), kws={"data": pH_exp})
 print(lmfit.fit_report(fit_result))
 parvals = fit_result.params.valuesdict()
-tau_exp = parvals["tau"]
+tau_exp_bareSV = parvals["tau"]
 
 plt.plot(t_exp, pH_exp)
-plt.plot(t_exp, pH_exp_decay(t_exp, tau_exp))
+plt.plot(t_exp, pH_exp_decay(t_exp, tau_exp_bareSV))
 plt.show()
 
 
@@ -170,7 +195,7 @@ t = np.arange(start=t_start, stop=t_stop, step=dt)
 
 INIT = init.copy()
 INIT["pH_L"] = 6.6
-data = pH_exp_decay(t, tau=tau_exp)
+data = pH_exp_decay(t, tau=tau_exp_bareSV)
 # plt.plot(t, data)
 # plt.show()
 
@@ -254,7 +279,8 @@ INIT = init.copy()
 INIT["pH_L"] = 6.6
 P = p.copy()
 P["P_H"] = P_H_ref
-data = GABA_exp_decay(t, P.copy(), INIT.copy())
+# data = GABA_exp_decay(t, P.copy(), INIT.copy())
+data = GABA_exp_decay_2(t, tau_exp_bareSV)
 # plt.plot(t, data)
 # plt.show()
 
@@ -455,12 +481,36 @@ plt.show()
 ########################################## GLUT span #############################################
 ##################################################################################################
 
+exp_fluo_GLUT = pd.read_csv("experimental_fluo_GLUT.csv", header=None)
+exp_fluo_GLUT = np.array(exp_fluo_GLUT)
+# print(exp_pH_bareSV)
+t_exp = exp_fluo_GLUT[:, 0]
+t_exp = t_exp - t_exp[0]
+fluo_exp = exp_fluo_GLUT[:, 1]
+
+params = lmfit.Parameters()
+params.add("tau", value=10, min=0)
+params.add("k", value=5, min=0)
+
+fit_result = lmfit.minimize(
+    residual_fluo, params, args=(t_exp,), kws={"data": fluo_exp}
+)
+print(lmfit.fit_report(fit_result))
+parvals = fit_result.params.valuesdict()
+tau_exp_GLUT = parvals["tau"]
+k_exp = parvals["k"]
+
+plt.plot(t_exp, fluo_exp)
+plt.plot(t_exp, fluo_exp_decay(t_exp, tau_exp_GLUT, k_exp))
+plt.show()
+
+
 t_start = 0
 t_stop = 500
 dt = 0.02
 t = np.arange(start=t_start, stop=t_stop, step=dt)
 
-data = GLUT_exp_decay(t)
+data = GLUT_exp_decay(t, tau_exp_GLUT)
 
 INIT = init.copy()
 INIT["pH_L"] = 6.6
@@ -517,15 +567,35 @@ plt.show()
 
 
 t_start = 0
-t_stop = 2000
 t_stop = 500
 dt = 0.02
 t = np.arange(start=t_start, stop=t_stop, step=dt)
 
-data = GLUT_exp_decay(t)
+data = GLUT_exp_decay(t, tau_exp_GLUT)
 
+INIT = init.copy()
+INIT["pH_L"] = 6.6
+P = p.copy()
+P["N_VGAT"] = 0
 
-P["k_GLUT"] = 1e-3
+params = lmfit.Parameters()
+params.add("k_GLUT", value=25, min=10, max=150)
+params.add("tau_GLUT", value=5, min=0, max=30)
+params.add("P_Cl", value=0, vary=False)
+
+fit_result = lmfit.minimize(
+    residual_GLUT_2, params, args=(t,), kws={"data": data, "p": P, "init": INIT}
+)
+print(lmfit.fit_report(fit_result))
+
+parvals = fit_result.params.valuesdict()
+k_GLUT = parvals["k_GLUT"]
+tau_GLUT = parvals["tau_GLUT"]
+P_Cl = parvals["P_Cl"]
+P["k_GLUT"] = k_GLUT
+P["tau_GLUT"] = tau_GLUT
+P["P_Cl"] = P_Cl
+
 PP, y0 = models.set_SV_model(P, INIT)
 y = spi.odeint(models.SV_model_constant_modified, y0, t, args=(PP,))
 sol = models.extract_solution_SV(y, PP)
@@ -561,9 +631,26 @@ ax[1].set_ylabel("GLUT molecules []")
 plt.tight_layout()
 plt.show()
 
+plt.plot(t, sol["Cl"])
+plt.show()
+
+
+t_start = 0
+t_stop = 500
+dt = 0.02
+t = np.arange(start=t_start, stop=t_stop, step=dt)
+
+data = GLUT_exp_decay(t, tau_exp_GLUT)
+
+INIT = init.copy()
+INIT["pH_L"] = 6.6
+P = p.copy()
+P["N_VGAT"] = 0
 
 params = lmfit.Parameters()
-params.add("k_GLUT", value=0.001, min=0)
+params.add("k_GLUT", value=25, min=10, max=150)
+params.add("tau_GLUT", value=5, min=0, max=30)
+params.add("P_Cl", value=1e-7, min=1e-8, max=1e-6)
 
 fit_result = lmfit.minimize(
     residual_GLUT_2, params, args=(t,), kws={"data": data, "p": P, "init": INIT}
@@ -571,7 +658,12 @@ fit_result = lmfit.minimize(
 print(lmfit.fit_report(fit_result))
 
 parvals = fit_result.params.valuesdict()
-P["k_GLUT"] = parvals["k_GLUT"]
+k_GLUT = parvals["k_GLUT"]
+tau_GLUT = parvals["tau_GLUT"]
+P_Cl = parvals["P_Cl"]
+P["k_GLUT"] = k_GLUT
+P["tau_GLUT"] = tau_GLUT
+P["P_Cl"] = P_Cl
 
 PP, y0 = models.set_SV_model(P, INIT)
 y = spi.odeint(models.SV_model_constant_modified, y0, t, args=(PP,))
@@ -606,4 +698,48 @@ ax[1].plot(t, sol["GLUT"], color=color)
 ax[1].set_xlabel("time [s]")
 ax[1].set_ylabel("GLUT molecules []")
 plt.tight_layout()
+plt.show()
+
+plt.plot(t, sol["Cl"])
+plt.show()
+
+
+Cl_L = [i for i in range(1, 151)]
+
+INIT = init.copy()
+INIT["pH_L"] = 6.6
+P = p.copy()
+P["N_VGAT"] = 0
+P["k_GLUT"] = k_GLUT
+P["tau_GLUT"] = tau_GLUT
+P["P_Cl"] = P_Cl
+
+pH_SS = list()
+GLUT_SS = list()
+
+for Cl in Cl_L:
+    INIT["Cl_L"] = Cl * 1e-3
+
+    PP, y0 = models.set_SV_model(P, INIT)
+
+    y = spi.odeint(models.SV_model_constant_modified, y0, t, args=(PP,))
+
+    sol = models.extract_solution_SV(y, PP)
+
+    pH_SS.append(sol["pH"][-1])
+    GLUT_SS.append(sol["GLUT"][-1])
+
+fig, ax = plt.subplots(2, 1)
+color = "gray"
+ax[0].plot(Cl_L, pH_SS, color=color)
+ax[0].set_xlim(1, 150)
+ax[0].set_ylim(4.5, 7.5)
+ax[0].set_xlabel("Initial Cl- luminal concentration [mM]")
+ax[0].set_ylabel("Final pH_L []")
+color = "red"
+ax[1].plot(Cl_L, GLUT_SS, color=color)
+ax[1].set_xlim(1, 150)
+# ax[1].set_ylim(4.5, 7.5)
+ax[1].set_xlabel("Initial Cl- luminal concentration [mM]")
+ax[1].set_ylabel("Final GLUT molecules []")
 plt.show()
