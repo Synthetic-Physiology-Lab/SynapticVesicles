@@ -11,7 +11,7 @@ t_stop = 2000
 dt = 0.02
 t = np.arange(start=t_start, stop=t_stop, step=dt)
 
-with open("input.yml", "r") as f:
+with open("input_lysosome.yml", "r") as f:
     p_init = yaml.full_load(f)
 
 p = p_init["p"]
@@ -34,11 +34,11 @@ INIT["Na_L"] = 20e-3
 INIT["Cl_L"] = 1e-3
 INIT["pH_L"] = 6
 
-PP, y0 = models.set_lysosome_model_MADONNA(P, INIT)
+PP, y0 = models.set_lysosome_model(P.copy(), INIT.copy())
 
-y = spi.odeint(models.lysosome_model_MADONNA, y0, t, args=(PP,))
+y = spi.odeint(models.lysosome_model, y0, t, args=(PP,))
 
-sol = models.extract_solution(y, PP)
+sol = models.extract_solution_lysosome(y, PP)
 
 ax.plot(t, sol["pH"])
 
@@ -53,11 +53,11 @@ INIT["Na_L"] = 20e-3
 INIT["Cl_L"] = 1e-3
 INIT["pH_L"] = 6
 
-PP, y0 = models.set_lysosome_model_MADONNA(P, INIT)
+PP, y0 = models.set_lysosome_model(P.copy(), INIT.copy())
 
-y = spi.odeint(models.lysosome_model_MADONNA, y0, t, args=(PP,))
+y = spi.odeint(models.lysosome_model, y0, t, args=(PP,))
 
-sol = models.extract_solution(y, PP)
+sol = models.extract_solution_lysosome(y, PP)
 
 ax.plot(t, sol["pH"])
 

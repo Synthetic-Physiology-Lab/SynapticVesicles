@@ -15,118 +15,7 @@ def create_VATP_interp_obj(VATP_grid_file):
     return VATP_interp
 
 
-def lysosome_model(y, t, p):
-
-    ## parameters extraction
-    # Physics constants
-    k_b = p["k_b"]  # Boltzmann constant
-    R = p["R"]  # Gas constant [J / (mol * K)]
-    F = p["F"]  # Faraday's constant [C / mol]
-    N_A = p["N_A"]  # Avogadro constant [mol^-1]
-
-    # Temperature
-    T = p["T"] + 273.15  # Absolute temperature [K]
-
-    # Cytosolic concentrations
-    pH_C = p["pH_C"]  # Cytosolic pH []
-    H_C = 10 ** (-pH_C)  # Cytosolic H+ concentration [M]
-    K_C = p["K_C"]  # Cytosolic K+ concentration [M]
-    Na_C = p["Na_C"]  # Cytosolic Na+ concentration [M]
-    Cl_C = p["Cl_C"]  # Cytosolic Cl- concentration [M] 5-50
-
-    # Permeabilities
-    P_H = p["P_H"]  # H+ permeability [cm/s]
-    P_K = p["P_K"]  # K+ permeability [cm/s]
-    P_Na = p["P_Na"]  # Na+ permeability [cm/s]
-    P_Cl = p["P_Cl"]  # Cl- permeability [cm/s]
-    P_W = p["P_W"]  # H2O permeability [cm/s]
-
-    # Capacitance density
-    C_0 = p["C_0"]  # Lipid bilayer capacitance [F/cm^2]
-
-    # Leaflets potentials
-    psi_o = p["psi_o"]  # Outside leaflet potential [V]
-    psi_i = p["psi_i"]  # Inside leaflet potential [V]
-
-    # Lysosome dimensions
-    d = p["d"]  # Lysosome diameter [um]
-    S = p["S"]  # Lysosome surface area [cm^2]
-    V_0 = p["V_0"]  # Lysosome inital volume [L]
-
-    # Luminal buffering capacity
-    beta = p["beta"]  # Buffering capacity [M/pH]
-
-    # Luminal concentration of impermeant charges
-    B = p["B"]  # Concentration of impermeant charges [M]
-
-    # Osmotic parameter
-    theta = p["theta"]  # Osmotic coefficient []
-    v_W = p["v_W"]  # Partial molar volume of water [cm^3/mol]
-    theta_C = p["theta_C"]  # Cytoplasmic osmolyte concentration [M]
-
-    # Pumps quantity
-    N_V = p["N_V"]  # Number of V-ATPases
-    N_ClC = p["N_ClC"]  # Number of ClC-7 antiporters
-    J_VATP = p["J_VATP"]  # V-ATPase flux [nterpolator object
-
-    # ClC-7 pump stoichiometry
-    ClC_Cl = p["ClC_Cl"]  # ClC-7 Cl- Stoichiometry
-    ClC_H = p["ClC_H"]  # ClC-7 H+ Stoichiometry
-
-    ## state variables extraction
-    H, pH, K, Na, Cl, V = y  # Ionic species are expressed in number of molecules
-    # they are converted in concentrations [M]
-    H = H / V / N_A
-    K = K / V / N_A
-    Na = Na / V / N_A
-    Cl = Cl / V / N_A
-
-    # Modified cytoplasmic surface concentrations
-    # Cle = Cl_C * np.exp(psi_o / RTF)
-    # Ke = K_C * np.exp(-psi_o / RTF)
-    # Nae = Na_C * np.exp(-psi_o / RTF)
-    # pHe = pHbulk + psi_o / (RTF * 2.3) # 2.3 = ln(10)
-
-    # Modified luminal surface concentrations
-    # Cli = Cl * np.exp(psi_i / RTF)
-    # Ki = K * np.exp(-psi_i / RTF)
-    # Nai = Na * np.exp(-psi_i / RTF)
-    # pHi = pH + psi_i / (RTF * 2.3) # 2.3 = ln(10)
-
-    ## parts calculation
-    psi = F / (C_0 * S) * (V * (K + Na - Cl + beta * (pH_C - pH)) - B * V_0)
-    # U = psi / (k_b * T)
-    RTF = R * T / F
-    U = psi / RTF
-    a = 0.3
-    b = 1.5e-5
-    print("############# ", Cl_C, Cl, " ############")
-    delta_u_ClC = (ClC_Cl + 1) * psi + RTF * (
-        2.3 * (pH - pH_C) + ClC_Cl * np.log(Cl_C / Cl)
-    )
-    x = 0.5 * (1 + np.tanh((delta_u_ClC + 250) / 75))
-    J_ClC = x * a * delta_u_ClC + (1 - x) * b * delta_u_ClC**3
-    J_V = J_VATP([psi, pH])[0]
-
-    J_H = P_H * S * (U * (H - (H_C * np.exp(-U)))) / (1 - np.exp(-U))
-    J_K = P_K * S * (U * (K - (K_C * np.exp(-U)))) / (1 - np.exp(-U))
-    J_Na = P_Na * S * (U * (Na - (Na_C * np.exp(-U)))) / (1 - np.exp(-U))
-    J_Cl = P_Cl * S * (U * (Cl - (Cl_C * np.exp(-U)))) / (1 - np.exp(-U))
-
-    ## derivatives calculation
-    dH = N_V * J_V + N_ClC * J_ClC + J_H
-    dpH = 1 / beta * dH / V / N_A
-    dK = +J_K
-    dNa = +J_Na
-    dCl = -2 * N_ClC * J_ClC + J_Cl
-    dV = P_W * S * v_W * (theta * (H + K + Na + Cl) - theta_C)
-
-    dy = (dH, dpH, dK, dNa, dCl, dV)
-    print("############# ", dy, " ############")
-    return np.array(dy)
-
-
-def lysosome_model_MADONNA(y: np.ndarray, t: np.ndarray, p: dict):
+def lysosome_model(y: np.ndarray, t: np.ndarray, p: dict):
     """Lysosome model corresponding to Berkeley Madonna code.
 
 
@@ -229,6 +118,7 @@ def lysosome_model_MADONNA(y: np.ndarray, t: np.ndarray, p: dict):
 
     ## parts calculation
     psi = F / (C_0 * S) * (V * (H + K + Na - Cl) - B * V_0)
+    #print(V, psi)
     U = psi / RTF
     a = -0.3
     b = -1.5e-5
@@ -251,7 +141,7 @@ def lysosome_model_MADONNA(y: np.ndarray, t: np.ndarray, p: dict):
     J_W = P_W * S * (theta * (10 ** (-pH) + K + Na + Cl) + Q / V - theta_C)
 
     ## derivatives calculation
-    dV = J_W * v_W / 1e6 * 1e15  # / 1000 / 55 = * v_W(18) / 1e6
+    dV = J_W * v_W / 1e6 * 1e15
     dpH = -(N_V * J_V + N_ClC * J_ClC + J_H) / beta / V / N_A
     dH = N_V * J_V + ClC_H * N_ClC * J_ClC + J_H
     dK = J_K
@@ -262,15 +152,14 @@ def lysosome_model_MADONNA(y: np.ndarray, t: np.ndarray, p: dict):
     return np.array(dy)
 
 
-def set_lysosome_model_MADONNA(p, init, VATP_grid_file="datasetProtonPump.csv"):
+def set_lysosome_model(p, init, VATP_grid_file="datasetProtonPump.csv"):
     if p["d"] > 0:
         r = p["d"] * 1e-6 / 2  # Lysosome radius [m]
         V = 4 / 3 * np.pi * r**3 * 1e18  # SV volume [um^3]
         # V = 4 / 3 * np.pi * r**3 * 1e3  # Lysosome volume [L]
         S = 4 * np.pi * r**2 * 1e4  # Lysosome surface area [cm^2]
     else:
-        V = p["V"] * 1e15  # Lysosome volume [um^3]
-        # V = p["V"]  # Lysosome volume [L]
+        V = init["V"] * 1e15  # Lysosome volume [um^3]
         S = p["S"]  # Lysosome surface area [cm^2]
 
     B = (
@@ -278,7 +167,7 @@ def set_lysosome_model_MADONNA(p, init, VATP_grid_file="datasetProtonPump.csv"):
         + init["Na_L"]
         - init["Cl_L"]
         + init["H_L"]
-        + (p["C_0"] * S) / (V * 1e-15 * p["F"]) * (p["psi_o"] - p["psi_i"])
+        + (p["C_0"] * S) / (V * 1e-15 * p["F"]) * (p["psi_o"] - p["psi_i"] - p["psi_tot"])
     )
 
     Q = (
@@ -314,7 +203,7 @@ def set_lysosome_model_MADONNA(p, init, VATP_grid_file="datasetProtonPump.csv"):
     return (p, y0)
 
 
-def extract_solution(y, p):
+def extract_solution_lysosome(y, p):
     N_A = p["N_A"]
     V = y[:, 0]
     V_liters = V * 1e-15
@@ -335,7 +224,7 @@ def extract_solution(y, p):
     return sol
 
 
-def calculate_psi(sol, p):
+def calculate_psi_lysosome(sol, p):
     ## parameters extraction
     F = p["F"]  # Faraday's constant [C / mol]
 
@@ -358,12 +247,6 @@ def calculate_psi(sol, p):
     psi = F / (C_0 * S) * (V * (H + K + Na - Cl) - B * V_0)
     psi_tot = psi + psi_o - psi_i
 
-    #    psi = (
-    #        p["F"]
-    #        / (p["C_0"] * p["S"])
-    #        * (sol["V"] * (sol["H"] + sol["K"] + sol["Na"] - sol["Cl"]) - p["B"] * p["V_0"])
-    #    )
-    #    psi_tot = psi + p["psi_o"] - p["psi_i"]
     return (psi, psi_tot)
 
 

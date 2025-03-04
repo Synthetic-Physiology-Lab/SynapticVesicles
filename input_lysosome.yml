@@ -27,17 +27,15 @@ p:
   # Capacitance density
   C_0: 1.0e-6 # Lipid bilayer capacitance [F/cm^2]
   
-  # Leaflets potentials
+  # Membrane potentials
+  psi_tot: 0.0 # Initial total voltage difference across lipid bilayer [V]
   psi_o: -50.0e-3 # Outside leaflet potential [V]
   psi_i: 0.0 # Inside leaflet potential [V]
 
   # Lysosome dimensions
   d: 0.68 # Lysosome diameter [um] (if considered spherical)
-  V: 3.3e-17 # Lysosome volume [L] (if not considered spherical)
-  S: 6.2e-9 # Lysosome surface area [cm^2] (if not considered spherical)
-  
-  # Lysosome dime (if spherical)
-  d: 0.68 # Lysosome diameter [um]
+  V: 3.3e-17 # Lysosome volume [L] (if NOT considered spherical)
+  S: 6.2e-9 # Lysosome surface area [cm^2] (if NOT considered spherical)
 
   # Luminal buffering capacity
   beta: 40.0e-3 # Buffering capacity [M/pH]
@@ -60,10 +58,9 @@ p:
 # Initial conditions
 init:
 
-  # Luminal concentrations
   H_L: 0.0 # Luminal H+ concentration [M]
   pH_L: 7.4 # Luminal pH []
   K_L: 5.0e-3 # Luminal K+ concentration [M]
   Na_L: 145.0e-3 # Luminal Na+ concentration [M]
   Cl_L: 110.0e-3 # Luminal Cl- concentration [M]
-  psi: 0.0 # Voltage difference across lipid bilayer [V]
+  V: 3.3e-17 # Lysosome volume [L] (if NOT considered spherical)

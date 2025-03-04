@@ -11,7 +11,7 @@ t_stop = 2000
 dt = 0.02
 t = np.arange(start=t_start, stop=t_stop, step=dt)
 
-with open("input.yml", "r") as f:
+with open("input_lysosome.yml", "r") as f:
     p_init = yaml.full_load(f)
 
 p = p_init["p"]
@@ -38,13 +38,13 @@ psi_SS = list()
 for C in C_init:
     INIT["K_L"] = C * 1e-3
 
-    PP, y0 = models.set_lysosome_model_MADONNA(P, INIT)
+    PP, y0 = models.set_lysosome_model(P.copy(), INIT.copy())
 
-    y = spi.odeint(models.lysosome_model_MADONNA, y0, t, args=(PP,))
+    y = spi.odeint(models.lysosome_model, y0, t, args=(PP,))
 
-    sol = models.extract_solution(y, PP)
+    sol = models.extract_solution_lysosome(y, PP)
 
-    psi, psi_tot = models.calculate_psi(sol, PP)
+    psi, psi_tot = models.calculate_psi_lysosome(sol, PP)
 
     pH_SS.append(sol["pH"][-1])
     psi_SS.append(psi_tot[-1] * 1e3)
@@ -66,13 +66,13 @@ psi_SS = list()
 for C in C_init:
     INIT["Na_L"] = C * 1e-3
 
-    PP, y0 = models.set_lysosome_model_MADONNA(P, INIT)
+    PP, y0 = models.set_lysosome_model(P.copy(), INIT.copy())
 
-    y = spi.odeint(models.lysosome_model_MADONNA, y0, t, args=(PP,))
+    y = spi.odeint(models.lysosome_model, y0, t, args=(PP,))
 
-    sol = models.extract_solution(y, PP)
+    sol = models.extract_solution_lysosome(y, PP)
 
-    psi, psi_tot = models.calculate_psi(sol, PP)
+    psi, psi_tot = models.calculate_psi_lysosome(sol, PP)
 
     pH_SS.append(sol["pH"][-1])
     psi_SS.append(psi_tot[-1] * 1e3)
@@ -94,13 +94,13 @@ psi_SS = list()
 for C in C_init:
     INIT["Cl_L"] = C * 1e-3
 
-    PP, y0 = models.set_lysosome_model_MADONNA(P, INIT)
+    PP, y0 = models.set_lysosome_model(P.copy(), INIT.copy())
 
-    y = spi.odeint(models.lysosome_model_MADONNA, y0, t, args=(PP,))
+    y = spi.odeint(models.lysosome_model, y0, t, args=(PP,))
 
-    sol = models.extract_solution(y, PP)
+    sol = models.extract_solution_lysosome(y, PP)
 
-    psi, psi_tot = models.calculate_psi(sol, PP)
+    psi, psi_tot = models.calculate_psi_lysosome(sol, PP)
 
     pH_SS.append(sol["pH"][-1])
     psi_SS.append(psi_tot[-1] * 1e3)
@@ -122,13 +122,13 @@ psi_SS = list()
 for C in C_init:
     INIT["Cl_L"] = C * 1e-3
 
-    PP, y0 = models.set_lysosome_model_MADONNA(P, INIT)
+    PP, y0 = models.set_lysosome_model(P.copy(), INIT.copy())
 
-    y = spi.odeint(models.lysosome_model_MADONNA, y0, t, args=(PP,))
+    y = spi.odeint(models.lysosome_model, y0, t, args=(PP,))
 
-    sol = models.extract_solution(y, PP)
+    sol = models.extract_solution_lysosome(y, PP)
 
-    psi, psi_tot = models.calculate_psi(sol, PP)
+    psi, psi_tot = models.calculate_psi_lysosome(sol, PP)
 
     pH_SS.append(sol["pH"][-1])
     psi_SS.append(psi_tot[-1] * 1e3)
@@ -164,13 +164,13 @@ psi_SS = list()
 for C in C_init:
     P["Cl_C"] = C * 1e-3
 
-    PP, y0 = models.set_lysosome_model_MADONNA(P, INIT)
+    PP, y0 = models.set_lysosome_model(P.copy(), INIT.copy())
 
-    y = spi.odeint(models.lysosome_model_MADONNA, y0, t, args=(PP,))
+    y = spi.odeint(models.lysosome_model, y0, t, args=(PP,))
 
-    sol = models.extract_solution(y, PP)
+    sol = models.extract_solution_lysosome(y, PP)
 
-    psi, psi_tot = models.calculate_psi(sol, PP)
+    psi, psi_tot = models.calculate_psi_lysosome(sol, PP)
 
     pH_SS.append(sol["pH"][-1])
     psi_SS.append(psi_tot[-1] * 1e3)
@@ -192,13 +192,13 @@ psi_SS = list()
 for C in C_init:
     P["Cl_C"] = C * 1e-3
 
-    PP, y0 = models.set_lysosome_model_MADONNA(P, INIT)
+    PP, y0 = models.set_lysosome_model(P.copy(), INIT.copy())
 
-    y = spi.odeint(models.lysosome_model_MADONNA, y0, t, args=(PP,))
+    y = spi.odeint(models.lysosome_model, y0, t, args=(PP,))
 
-    sol = models.extract_solution(y, PP)
+    sol = models.extract_solution_lysosome(y, PP)
 
-    psi, psi_tot = models.calculate_psi(sol, PP)
+    psi, psi_tot = models.calculate_psi_lysosome(sol, PP)
 
     pH_SS.append(sol["pH"][-1])
     psi_SS.append(psi_tot[-1] * 1e3)
