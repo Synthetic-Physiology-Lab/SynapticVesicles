@@ -23,20 +23,21 @@ p:
 
   # Permeabilities
   P_H: 1.526e-3 # H+ permeability [cm/s]
-  P_Cl: 1.2e-5 # Cl- permeability [cm/s]
+  P_Cl: 0 #1.2e-5 # Cl- permeability [cm/s]
   P_W: 0 # 0.052 # H2O permeability [cm/s]
 
   # Capacitance density
   C_0: 1.0e-6 # Lipid bilayer capacitance [F/cm^2]
   
   # Leaflets potentials
+  psi_tot: 0.0 # Initial total voltage difference across lipid bilayer [V]
   psi_o: -50.0e-3 # Outside leaflet potential [V]
   psi_i: 0.0 # Inside leaflet potential [V]
 
   # SV dimensions
   d: 0.04 # SV diameter [um] (if considered spherical)
-  V: 3.35e-20 # SV volume [L] (if not considered spherical)
-  S: 5.0e-11 # SV surface area [cm^2] (if not considered spherical)
+  V: 3.35e-20 # SV volume [L] (if NOT considered spherical)
+  S: 5.0e-11 # SV surface area [cm^2] (if NOT considered spherical)
 
   # Luminal buffering capacity
   beta: 40.0e-3 # Buffering capacity [M/pH]
@@ -67,9 +68,10 @@ p:
   # Neurotransmitters trasnsport rates
   k_GABA: 1 # GABA transport rate [s^-1]
   k_GLUT: 1 # Glutamate transport rate [s^-1]
-  tau_GABA: 1 # VGAT time constant [s]
-  tau_GABA_2: 1 # GABA efflux time constant [s]
-  tau_GLUT: 1 # Glutamate efflux time constant [s]
+  tau_VGAT: 1 # VGAT time constant [s]
+  tau_GABA: 1 # GABA efflux time constant [s]
+  tau_VGLUT: 1 # VGLUT-1 efflux time constant [s]
+  P_Cl_VGLUT: 0 #1.2e-5 # VGLUT-1 Cl- permeability [s^-1]
 
 
 
@@ -78,8 +80,8 @@ init:
 
   # Luminal concentrations
   H_L: 0.0 # Luminal H+ concentration [M]
-  pH_L: 7.4 # Luminal pH []
+  pH_L: 6.6 # Luminal pH []
   Cl_L: 50.0e-3 # Luminal Cl- concentration [M] 130.0e-3 
   GABA_L: 0 # Luminal GABA concentration [M]
   GLUT_L: 0 # Luminal GLUT concentration [M]
-  psi: 0.0 # Voltage difference across lipid bilayer [V]
+  V: 3.35e-20 # SV volume [L] (if NOT considered spherical)
