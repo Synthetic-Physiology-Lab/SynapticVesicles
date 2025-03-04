@@ -52,7 +52,7 @@ pH_SS = list()
 for h_p in H_P:
     P["P_H"] = h_p
 
-    PP, y0 = models.set_bareSV_model(P, INIT)
+    PP, y0 = models.set_bareSV_model(P.copy(), INIT.copy())
 
     y = spi.odeint(models.bareSV_model, y0, t, args=(PP,))
 
@@ -108,7 +108,7 @@ P["P_H"] = P_H_ref
 INIT = init.copy()
 INIT["pH_L"] = 6.6
 
-PP, y0 = models.set_bareSV_model(P, INIT)
+PP, y0 = models.set_bareSV_model(P.copy(), INIT.copy())
 
 y = spi.odeint(models.bareSV_model, y0, t, args=(PP,))
 
@@ -149,7 +149,7 @@ P["P_H"] = P_H_ref
 INIT = init.copy()
 INIT["pH_L"] = 6.6
 
-PP, y0 = models.set_bareSV_model(P, INIT)
+PP, y0 = models.set_bareSV_model(P.copy(), INIT.copy())
 
 y = spi.odeint(models.bareSV_model, y0, t, args=(PP,))
 
@@ -199,7 +199,7 @@ psi_SS = list()
 for b in beta:
     P["beta"] = b * 1e-3
 
-    PP, y0 = models.set_bareSV_model(P, INIT)
+    PP, y0 = models.set_bareSV_model(P.copy(), INIT.copy())
 
     y = spi.odeint(models.bareSV_model, y0, t, args=(PP,))
 
@@ -238,7 +238,7 @@ print(RMSE_pH_perc, RMSE_psi_perc)
 color = "gray"
 ax1.plot(beta, pH_SS, color=color)
 ax1.plot([20, 20, 60, 60, 20], [5.9, 6.05, 6.05, 5.9, 5.9], color="k", linestyle=":")
-ax1.set_xlim(0.5, 160)
+# ax1.set_xlim(0.5, 160)
 # ax1.set_ylim(5.9, 6.5)
 ax1.set_xlabel("Buffering capacity [mM/pH]")
 ax1.set_ylabel("Final pH_L []", color=color)
@@ -264,7 +264,7 @@ P["P_H"] = P_H_ref
 INIT = init.copy()
 INIT["pH_L"] = 6.6
 
-PP, y0 = models.set_bareSV_model(P, INIT)
+PP, y0 = models.set_bareSV_model(P.copy(), INIT.copy())
 
 y = spi.odeint(models.bareSV_model, y0, t, args=(PP,))
 
@@ -315,7 +315,7 @@ P["N_ClC"] = 0
 INIT = init.copy()
 INIT["pH_L"] = 6.6
 
-PP, y0 = models.set_bareSV_model(P, INIT)
+PP, y0 = models.set_bareSV_model(P.copy(), INIT.copy())
 
 y = spi.odeint(models.bareSV_model, y0, t[t <= 100], args=(PP,))
 
@@ -367,7 +367,7 @@ P["N_V"] = 0
 INIT = init.copy()
 INIT["pH_L"] = 6.6
 
-PP, y0 = models.set_bareSV_model(P, INIT)
+PP, y0 = models.set_bareSV_model(P.copy(), INIT.copy())
 
 y = spi.odeint(models.bareSV_model, y0, t[t <= 100], args=(PP,))
 

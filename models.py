@@ -293,7 +293,7 @@ def bareSV_model(y: np.ndarray, t: np.ndarray, p: dict):
 
     # Permeabilities
     P_H = p["P_H"]  # H+ permeability [cm/s]
-    # P_Cl = p["P_Cl"]  # Cl- permeability [cm/s]
+    P_Cl = p["P_Cl"]  # Cl- permeability [cm/s]
     P_W = p["P_W"]  # H2O permeability [cm/s]
 
     # Capacitance density
@@ -385,7 +385,7 @@ def set_bareSV_model(p, init, VATP_grid_file="datasetProtonPump.csv"):
         # V = 4 / 3 * np.pi * r**3 * 1e3  # SV volume [L]
         S = 4 * np.pi * r**2 * 1e4  # SV surface area [cm^2]
     else:
-        V = p["V"] * 1e15  # Lysosome volume [um^3]
+        V = init["V"] * 1e15  # Lysosome volume [um^3]
         # V = p["V"]  # Lysosome volume [L]
         S = p["S"]  # Lysosome surface area [cm^2]
 
@@ -394,7 +394,7 @@ def set_bareSV_model(p, init, VATP_grid_file="datasetProtonPump.csv"):
         + p["Na_L"]
         - init["Cl_L"]
         + init["H_L"]
-        + (p["C_0"] * S) / (V * 1e-15 * p["F"]) * (p["psi_o"] - p["psi_i"])
+        + (p["C_0"] * S) / (V * 1e-15 * p["F"]) * (p["psi_o"] - p["psi_i"] - p["psi_tot"])
     )
 
     Q = (
@@ -473,7 +473,6 @@ def calculate_psi_bareSV(sol, p):
 
 
 def calculate_Hflow_bareSV(sol, p):
-    # psi, _ = calculate_psi_bareSV(sol, p)
 
     ## parameters extraction
     # Physics constants
@@ -563,8 +562,6 @@ def calculate_Hflow_bareSV(sol, p):
     gg = np.array(gg)
 
     J_H = P_H * S * gg * (10 ** (-pHe) * np.exp(-U) - 10 ** (-pHi)) * N_A / 1000
-
-    # dH = N_V * J_V + ClC_H * N_ClC * J_ClC + J_H
 
     Hflow = dict()
     Hflow["vATPase"] = N_V * J_V
