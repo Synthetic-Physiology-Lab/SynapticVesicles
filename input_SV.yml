@@ -51,7 +51,7 @@ p:
   N_V: 1.4 # Number of V-ATPases
   N_ClC: 2 # Number of ClC-3 antiporters
   N_VGAT: 1 # Number of GABA transporters VGAT
-  N_VGLUT: 1 # Number of glutamate transporters VGLUT-1
+  N_VGLUT: 9 # Number of glutamate transporters VGLUT-1
 
   # ClC-3 pump stoichiometry
   ClC_Cl: 2 # ClC-3 Cl- Stoichiometry
@@ -66,12 +66,12 @@ p:
   VGLUT_H: 1 # VGLUT H+ Stoichiometry
   
   # Neurotransmitters trasnsport rates
-  k_GABA: 1 # GABA transport rate [s^-1]
-  k_GLUT: 1 # Glutamate transport rate [s^-1]
-  tau_VGAT: 1 # VGAT time constant [s]
-  tau_GABA: 1 # GABA efflux time constant [s]
-  tau_VGLUT: 1 # VGLUT-1 efflux time constant [s]
-  P_Cl_VGLUT: 0 #1.2e-5 # VGLUT-1 Cl- permeability [s^-1]
+  k_GABA: 77.438 # GABA transport rate [s^-1]
+  k_GLUT: 8.450 # Glutamate transport rate [s^-1]
+  tau_VGAT: 13.108 # VGAT time constant [s]
+  tau_GABA: 51.658 # GABA efflux time constant [s]
+  tau_VGLUT: 143.776 # VGLUT-1 efflux time constant [s]
+  P_Cl_VGLUT: 2.350e-9 # VGLUT-1 Cl- permeability [s^-1]
 
 
 

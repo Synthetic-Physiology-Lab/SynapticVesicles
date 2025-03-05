@@ -1,6 +1,18 @@
 import numpy as np
 import pandas as pd
+import yaml
+import scipy.integrate as spi
 from scipy.interpolate import RegularGridInterpolator
+
+
+def read_input_file(path):
+    with open(path, "r") as f:
+        p_init = yaml.full_load(f)
+
+    p = p_init["p"]
+    init = p_init["init"]
+    
+    return (p, init)
 
 
 def create_VATP_interp_obj(VATP_grid_file):
@@ -248,6 +260,15 @@ def calculate_psi_lysosome(sol, p):
     psi_tot = psi + psi_o - psi_i
 
     return (psi, psi_tot)
+
+
+def simulate_lysosome_model(p, init, t):
+    P, y0 = set_lysosome_model(p.copy(), init.copy())
+    y = spi.odeint(lysosome_model, y0, t, args=(P,))
+    sol = extract_solution_lysosome(y, P)
+    psi, psi_tot = calculate_psi_lysosome(sol, P)
+    
+    return (sol, psi, psi_tot)
 
 
 def bareSV_model(y: np.ndarray, t: np.ndarray, p: dict):
@@ -569,6 +590,15 @@ def calculate_Hflow_bareSV(sol, p):
     Hflow["leak"] = J_H
 
     return Hflow
+
+
+def simulate_bareSV_model(p, init, t):
+    P, y0 = set_bareSV_model(p.copy(), init.copy())
+    y = spi.odeint(bareSV_model, y0, t, args=(P,))
+    sol = extract_solution_bareSV(y, P)
+    psi, psi_tot = calculate_psi_bareSV(sol, P)
+    
+    return (sol, psi, psi_tot)
 
 
 def SV_model(y: np.ndarray, t: np.ndarray, p: dict):
@@ -1022,3 +1052,12 @@ def calculate_psi_SV(sol, p):
     psi_tot = psi + psi_o - psi_i
 
     return (psi, psi_tot)
+
+
+def simulate_SV_model(p, init, t):
+    P, y0 = set_SV_model(p.copy(), init.copy())
+    y = spi.odeint(SV_model, y0, t, args=(P,))
+    sol = extract_solution_SV(y, P)
+    psi, psi_tot = calculate_psi_SV(sol, P)
+    
+    return (sol, psi, psi_tot)

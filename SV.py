@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import yaml
 import pandas as pd
 import models
-from scipy.interpolate import RegularGridInterpolator
 import lmfit
 
 
@@ -509,7 +508,7 @@ P["tau_VGLUT"] = 0
 P["N_VGAT"] = 0
 
 params = lmfit.Parameters()
-params.add("k_GLUT", value=7, min=0)
+params.add("k_GLUT", value=1, min=0)
 
 fit_result = lmfit.minimize(
     residual_GLUT, params, args=(t,), kws={"data": data, "p": P.copy(), "init": INIT.copy()}
@@ -572,8 +571,8 @@ P["tau_VGLUT"] = 0
 P["N_VGAT"] = 0
 
 params = lmfit.Parameters()
-params.add("k_GLUT", value=25, min=10, max=150)
-params.add("tau_VGLUT", value=5, min=0, max=30)
+params.add("k_GLUT", value=1, min=0, max=150)
+params.add("tau_VGLUT", value=150, min=0, max=200)
 params.add("P_Cl_VGLUT", value=0, vary=False)
 
 fit_result = lmfit.minimize(
@@ -638,12 +637,16 @@ data = GLUT_exp_decay(t, tau_exp_GLUT)
 INIT = init.copy()
 INIT["pH_L"] = 6.6
 P = p.copy()
+P["P_H"] = P_H_ref
+P["tau_VGAT"] = 0
+P["tau_GABA"] = 0
+P["tau_VGLUT"] = 0
 P["N_VGAT"] = 0
 
 params = lmfit.Parameters()
-params.add("k_GLUT", value=25, min=10, max=150)
-params.add("tau_VGLUT", value=5, min=0, max=30)
-params.add("P_Cl_VGLUT", value=1e-7, min=1e-8, max=1e-6)
+params.add("k_GLUT", value=10, min=0, max=150)
+params.add("tau_VGLUT", value=100, min=0, max=150)
+params.add("P_Cl_VGLUT", value=1e-8, min=1e-9, max=1e-6)
 
 fit_result = lmfit.minimize(
     residual_GLUT_2, params, args=(t,), kws={"data": data, "p": P.copy(), "init": INIT.copy()}
@@ -658,7 +661,7 @@ P["k_GLUT"] = k_GLUT
 P["tau_VGLUT"] = tau_VGLUT
 P["P_Cl_VGLUT"] = P_Cl_VGLUT
 
-PP, y0 = models.set_SV_model(P, INIT)
+PP, y0 = models.set_SV_model(P.copy(), INIT.copy())
 y = spi.odeint(models.SV_model, y0, t, args=(PP,))
 sol = models.extract_solution_SV(y, PP)
 psi, psi_tot = models.calculate_psi_SV(sol, PP)
@@ -697,42 +700,4 @@ plt.plot(t, sol["Cl"])
 plt.show()
 
 
-Cl_L = [i for i in range(1, 151)]
 
-INIT = init.copy()
-INIT["pH_L"] = 6.6
-P = p.copy()
-P["N_VGAT"] = 0
-P["k_GLUT"] = k_GLUT
-P["tau_VGLUT"] = tau_VGLUT
-P["P_Cl_VGLUT"] = P_Cl_VGLUT
-
-pH_SS = list()
-GLUT_SS = list()
-
-for Cl in Cl_L:
-    INIT["Cl_L"] = Cl * 1e-3
-
-    PP, y0 = models.set_SV_model(P.copy(), INIT.copy())
-
-    y = spi.odeint(models.SV_model, y0, t, args=(PP,))
-
-    sol = models.extract_solution_SV(y, PP)
-
-    pH_SS.append(sol["pH"][-1])
-    GLUT_SS.append(sol["GLUT"][-1])
-
-fig, ax = plt.subplots(2, 1)
-color = "gray"
-ax[0].plot(Cl_L, pH_SS, color=color)
-ax[0].set_xlim(1, 150)
-ax[0].set_ylim(4.5, 7.5)
-ax[0].set_xlabel("Initial Cl- luminal concentration [mM]")
-ax[0].set_ylabel("Final pH_L []")
-color = "red"
-ax[1].plot(Cl_L, GLUT_SS, color=color)
-ax[1].set_xlim(1, 150)
-# ax[1].set_ylim(4.5, 7.5)
-ax[1].set_xlabel("Initial Cl- luminal concentration [mM]")
-ax[1].set_ylabel("Final GLUT molecules []")
-plt.show()
