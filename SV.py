@@ -115,6 +115,24 @@ def residual_GABA_tau2(pars, t, data, p, init):
     return res
 
 
+def residual_GABA_K_tau_tau2(pars, t, data, p, init):
+    parvals = pars.valuesdict()
+    p["k_GABA"] = parvals["k_GABA"]
+    p["tau_VGAT"] = parvals["tau_VGAT"]
+    p["tau_GABA"] = parvals["tau_GABA"]
+
+    p, y0 = models.set_SV_model(p, init)
+    y = spi.odeint(models.SV_model_modified2, y0, t, args=(p,))
+    sol = models.extract_solution_SV(y, p)
+
+    #molecules = 4000
+    #data = np.append(data, molecules)
+    #res = (np.append(sol["pH"], sol["GABA"][-1]) - data) / data
+    #res = sol["pH"] - data
+    res = sol["GABA"][-10:] - 4000
+    return res
+
+
 def GLUT_exp_decay(x, tau):
     y = 5.8 + (6.6 - 5.8) * np.exp(-x / tau)
     return y
@@ -431,6 +449,62 @@ P["tau_GABA"] = parvals["tau_GABA"]
 
 PP, y0 = models.set_SV_model(P.copy(), INIT.copy())
 y = spi.odeint(models.SV_model, y0, t, args=(PP,))
+sol = models.extract_solution_SV(y, PP)
+psi, psi_tot = models.calculate_psi_SV(sol, PP)
+
+
+fig, ax = plt.subplots(2, 1)
+
+color = "gray"
+ax1 = ax[0]
+ax1.plot(t, sol["pH"], color=color)
+ax1.plot(
+    t, data, color="tab:blue", linestyle=":", label="Experimental pH", linewidth=2.5
+)
+# ax1.set_xlim(0.5, 160)
+ax1.set_ylim(5.6, 7)
+ax1.set_xlabel("Time [s]")
+ax1.set_ylabel("pH_L []", color=color)
+ax1.tick_params(axis="y", labelcolor=color)
+ax1.legend()
+
+color = "black"
+ax2 = ax1.twinx()
+ax2.plot(t, psi_tot * 1e3, color=color, linestyle="--")
+ax2.set_ylim(-10, 40)
+ax2.set_ylabel("psi [mV]", color=color)
+ax2.tick_params(axis="y", labelcolor=color)
+
+color = "green"
+ax[1].plot(t, sol["GABA"], color=color)
+ax[1].set_xlabel("time [s]")
+ax[1].set_ylabel("GABA molecules []")
+plt.tight_layout()
+plt.show()
+
+
+params = lmfit.Parameters()
+params.add("k_GABA", value=50, min=0)
+params.add("tau_VGAT", value=25, min=0)
+params.add("tau_GABA", value=100, min=0)
+#params.add("k_GABA", value=P["k_GABA"], min=0)
+#params.add("tau_VGAT", value=P["tau_VGAT"], min=0)
+#params.add("tau_GABA", value=4000/P["k_GABA"], min=0)
+
+fit_result = lmfit.minimize(
+    residual_GABA_K_tau_tau2, params, args=(t,), kws={"data": data, "p": P.copy(), "init": INIT.copy()}
+)
+print(lmfit.fit_report(fit_result))
+
+parvals = fit_result.params.valuesdict()
+P["k_GABA"] = parvals["k_GABA"]
+P["tau_VGAT"] = parvals["tau_VGAT"]
+P["tau_GABA"] = parvals["tau_GABA"]
+
+#P["tau_GABA"] = 4000/P["k_GABA"]
+
+PP, y0 = models.set_SV_model(P.copy(), INIT.copy())
+y = spi.odeint(models.SV_model_modified2, y0, t, args=(PP,))
 sol = models.extract_solution_SV(y, PP)
 psi, psi_tot = models.calculate_psi_SV(sol, PP)
 

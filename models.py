@@ -951,6 +951,181 @@ def SV_model_modified(y: np.ndarray, t: np.ndarray, p: dict):
     return np.array(dy)
 
 
+def SV_model_modified2(y: np.ndarray, t: np.ndarray, p: dict):
+    """synaptic vesicle model containing vATPase, ClC-3 and passive proton leakage, VGAT and VGLUT-1
+
+
+    Parameters
+    ----------
+
+    y: np.ndarray
+        Initial conditions
+    t: np.ndarray
+        Time points
+    p: dict
+        Model parameters
+
+    Notes
+    -----
+
+    Model parameters are checked for completeness in function TODO.
+    """
+
+    ## parameters extraction
+    # Physics constants
+    k_b = p["k_b"]  # Boltzmann constant
+    R = p["R"]  # Gas constant [J / (mol * K)]
+    F = p["F"]  # Faraday's constant [C / mol]
+    N_A = p["N_A"]  # Avogadro constant [mol^-1]
+
+    # Temperature
+    T = p["T"] + 273.15  # Absolute temperature [K]
+
+    # Cytosolic concentrations
+    pH_C = p["pH_C"]  # Cytosolic pH []
+    H_C = 10 ** (-pH_C)  # Cytosolic H+ concentration [M]
+    K_C = p["K_C"]  # Cytosolic K+ concentration [M]
+    Na_C = p["Na_C"]  # Cytosolic Na+ concentration [M]
+    Cl_C = p["Cl_C"]  # Cytosolic Cl- concentration [M] 5-50
+
+    # Luminal concentrations
+    K = p["K_L"]  # Luminal K+ concentration [M]
+    Na = p["Na_L"]  # Luminal Na+ concentration [M]
+
+    # Permeabilities
+    P_H = p["P_H"]  # H+ permeability [cm/s]
+    P_Cl = p["P_Cl"]  # Cl- permeability [cm/s]
+    P_W = p["P_W"]  # H2O permeability [cm/s]
+
+    # Capacitance density
+    C_0 = p["C_0"]  # Lipid bilayer capacitance [F/cm^2]
+
+    # Leaflets potentials
+    psi_o = p["psi_o"]  # Outside leaflet potential [V]
+    psi_i = p["psi_i"]  # Inside leaflet potential [V]
+
+    # Lysosome dimensions
+    d = p["d"]  # Lysosome diameter [um]
+    S = p["S"]  # Lysosome surface area [cm^2]
+    V_0 = p["V_0"] * 1e-15  # Lysosome initial volume [um^3 to L]
+
+    # Luminal buffering capacity
+    beta = p["beta"]  # Buffering capacity [M/pH]
+
+    # Luminal concentration of impermeant charges
+    B = p["B"]  # Concentration of impermeant charges [M]
+
+    # Osmotic balance term
+    Q = p["Q"]
+
+    # Osmotic parameter
+    theta = p["theta"]  # Osmotic coefficient []
+    v_W = p["v_W"]  # Partial molar volume of water [cm^3/mol]
+    theta_C = p["theta_C"]  # Cytoplasmic osmolyte concentration [M]
+
+    # Pumps quantity
+    N_V = p["N_V"]  # Number of V-ATPases
+    N_ClC = p["N_ClC"]  # Number of ClC-7 antiporters
+    J_VATP = p["J_VATP"]  # V-ATPase flux [H+/s] (interpolator object)
+    N_VGAT = p["N_VGAT"]  # Number of GABA transporters VGAT
+    N_VGLUT = p["N_VGLUT"]  # Number of glutamate transporters VGLUT-1
+
+    # ClC-7 pump stoichiometry
+    ClC_Cl = p["ClC_Cl"]  # ClC-7 Cl- Stoichiometry
+    ClC_H = p["ClC_H"]  # ClC-7 H+ Stoichiometry
+
+    # VGAT transporter stoichiometry
+    VGAT_GABA = p["VGAT_GABA"]  # VGAT GABA Stoichiometry
+    VGAT_H = p["VGAT_H"]  # VGAT H+ Stoichiometry
+
+    # VGLUT-1 transporter stoichiometry
+    VGLUT_GLUT = p["VGLUT_GLUT"]  # VGLUT gluatamate Stoichiometry
+    VGLUT_H = p["VGLUT_H"]  # VGLUT H+ Stoichiometry
+
+    # Neurotransmitters trasnsport rates
+    k_GABA = p["k_GABA"]  # GABA transport rate [s^-1]
+    k_GLUT = p["k_GLUT"]  # Glutamate transport rate [s^-1]
+    tau_VGAT = p["tau_VGAT"]  # VGAT time constant [s]
+    tau_GABA = p["tau_GABA"]  # GABA efflux time constant [s]
+    tau_VGLUT = p["tau_VGLUT"]  # VGLUT-1 efflux time constant [s]
+    P_Cl_VGLUT = p["P_Cl_VGLUT"]  # VGLUT-1 Cl- permeability [s^-1]
+
+    ## state variables extraction
+    V, pH, H, Cl, GABA, GLUT = y  # Ionic species are expressed in number of molecules
+    # they are converted in concentrations [M]
+    V = V * 1e-15  # [um^3 to L]
+    H = H / V / N_A
+    Cl = Cl / V / N_A
+    GABA = GABA / V / N_A
+    GLUT = GLUT / V / N_A
+
+    RTF = R * T / F
+    # Modified cytoplasmic surface concentrations
+    Cle = Cl_C * np.exp(psi_o / RTF)
+    pHe = pH_C + psi_o / (RTF * 2.3)  # 2.3 = ln(10)
+
+    # Modified luminal surface concentrations
+    Cli = Cl * np.exp(psi_i / RTF)
+    pHi = pH + psi_i / (RTF * 2.3)  # 2.3 = ln(10)
+
+    ## parts calculation
+    psi = F / (C_0 * S) * (V * (H + K + Na - Cl - GLUT) - B * V_0)
+    U = psi / RTF
+    a = -0.3
+    b = -1.5e-5
+    delta_u_ClC = (ClC_Cl + ClC_H) * psi * 1e3 + RTF * 1e3 * (
+        2.3 * (pHe - pHi) + ClC_Cl * np.log(Cle / Cli)
+    )
+    x = 0.5 + 0.5 * np.tanh((delta_u_ClC + 250) / 75)
+    J_ClC = x * a * delta_u_ClC + (1 - x) * b * delta_u_ClC**3
+    J_V = J_VATP([psi * 1e3, pH])[0]
+
+    if np.abs(psi) > 0.01e-3:
+        gg = U / (1 - np.exp(-U))
+    else:
+        gg = 1 / (1 - U / 2 + U**2 / 6 - U**3 / 24 + U**4 / 120)
+
+    J_H = P_H * S * gg * (10 ** (-pHe) * np.exp(-U) - 10 ** (-pHi)) * N_A / 1000
+    # J_Cl = P_Cl * S * gg * (Cle - Cli * np.exp(-U)) * N_A / 1000
+    J_Cl_VGLUT = N_VGLUT * P_Cl_VGLUT * 1e-10 * gg * (Cle - Cli * np.exp(-U)) * N_A / 1000
+    J_W = P_W * S * (theta * (10 ** (-pH) + K + Na + Cl) + Q / V - theta_C)
+
+    if tau_VGAT == 0:
+        J_GABAin = k_GABA
+    elif tau_VGAT > 0:
+        J_GABAin = k_GABA * (1 - np.exp(-t / tau_VGAT))
+    
+    if tau_GABA == 0:
+        J_GABAout = 0
+    elif tau_GABA > 0:
+        J_GABAout = GABA * V * N_A / tau_GABA
+
+    J_GLUTin = k_GLUT
+    
+    if tau_VGLUT == 0:
+        J_GLUTout = 0
+    elif tau_VGLUT > 0:
+        J_GLUTout = GLUT * V * N_A / tau_VGLUT
+
+    ## derivatives calculation
+    H_tot = (
+        N_V * J_V
+        + ClC_H * N_ClC * J_ClC
+        + J_H
+        - VGAT_H * N_VGAT * (J_GABAin - J_GABAout)
+        - VGLUT_H * N_VGLUT * (J_GLUTin - J_GLUTout)
+    )
+    dV = J_W * v_W / 1e6 * 1e15  # [L/s to um^3/s]
+    dpH = -H_tot / beta / V / N_A
+    dH = H_tot
+    dCl = -ClC_Cl * N_ClC * J_ClC + J_Cl_VGLUT
+    dGABA = VGAT_GABA * N_VGAT * (J_GABAin - J_GABAout)
+    dGLUT = VGLUT_GLUT * N_VGLUT * (J_GLUTin - J_GLUTout)
+
+    dy = (dV, dpH, dH, dCl, dGABA, dGLUT)
+    return np.array(dy)
+
+
 def set_SV_model(p, init, VATP_grid_file="datasetProtonPump.csv"):
     if p["d"] > 0:
         r = p["d"] * 1e-6 / 2  # SV radius [m]

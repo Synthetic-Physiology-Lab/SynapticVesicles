@@ -29,7 +29,7 @@ p:
   # Capacitance density
   C_0: 1.0e-6 # Lipid bilayer capacitance [F/cm^2]
   
-  # Leaflets potentials
+  # Membrane potentials
   psi_tot: 0.0 # Initial total voltage difference across lipid bilayer [V]
   psi_o: -50.0e-3 # Outside leaflet potential [V]
   psi_i: 0.0 # Inside leaflet potential [V]
