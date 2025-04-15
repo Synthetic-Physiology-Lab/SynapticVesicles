@@ -22,7 +22,7 @@ p:
   Na_L: 145.0e-3 # Cytosolic Na+ concentration [M]
 
   # Permeabilities
-  P_H: 1.526e-3 # H+ permeability [cm/s]
+  P_H: 1.228e-3 # H+ permeability [cm/s] 1.526e-3
   P_Cl: 0 #1.2e-5 # Cl- permeability [cm/s]
   P_W: 0 # 0.052 # H2O permeability [cm/s]
 
@@ -62,16 +62,16 @@ p:
   VGAT_H: 1 # VGAT H+ Stoichiometry
   
   # VGLUT-1 transporter stoichiometry
-  VGLUT_GLUT: 1 # VGLUT gluatamate Stoichiometry
+  VGLUT_GLUT: 1 # VGLUT glutamate Stoichiometry
   VGLUT_H: 1 # VGLUT H+ Stoichiometry
   
   # Neurotransmitters trasnsport rates
-  k_GABA: 77.438 # GABA transport rate [s^-1]
-  k_GLUT: 8.450 # Glutamate transport rate [s^-1]
-  tau_VGAT: 13.108 # VGAT time constant [s]
-  tau_GABA: 51.658 # GABA efflux time constant [s]
-  tau_VGLUT: 143.776 # VGLUT-1 efflux time constant [s]
-  P_Cl_VGLUT: 2.350e-9 # VGLUT-1 Cl- permeability [s^-1]
+  k_GABA: 65.309 # GABA transport rate [s^-1]
+  k_GLUT: 12.310 # Glutamate transport rate [s^-1]
+  tau_VGAT: 13.617 # VGAT time constant [s]
+  tau_GABA: 61.869 # GABA efflux time constant [s]
+  tau_VGLUT: 156.342 # VGLUT-1 efflux time constant [s]
+  P_Cl_VGLUT: 5.093e-10 # VGLUT-1 Cl- permeability [s^-1]
 
 
 
@@ -81,7 +81,7 @@ init:
   # Luminal concentrations
   H_L: 0.0 # Luminal H+ concentration [M]
   pH_L: 6.6 # Luminal pH []
-  Cl_L: 50.0e-3 # Luminal Cl- concentration [M] 130.0e-3 
+  Cl_L: 110.0e-3 # Luminal Cl- concentration [M] 50.0e-3 130.0e-3 
   GABA_L: 0 # Luminal GABA concentration [M]
   GLUT_L: 0 # Luminal GLUT concentration [M]
   V: 3.35e-20 # SV volume [L] (if NOT considered spherical)

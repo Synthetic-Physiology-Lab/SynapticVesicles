@@ -173,7 +173,7 @@ ax1.legend()
 
 color = "black"
 ax2 = ax1.twinx()
-ax2.plot(t, psi_tot * 1e3, color=color, linestyle="--")
+ax2.plot(t, psi * 1e3, color=color, linestyle="--")
 # ax2.set_ylim(0, 80)
 ax2.set_ylabel("psi [mV]", color=color)
 ax2.tick_params(axis="y", labelcolor=color)
@@ -208,7 +208,7 @@ for b in beta:
     psi, psi_tot = models.calculate_psi_bareSV(sol, PP)
 
     pH_SS.append(sol["pH"][-1])
-    psi_SS.append(psi_tot[-1] * 1e3)
+    psi_SS.append(psi[-1] * 1e3)
 
 fig, ax1 = plt.subplots()
 
@@ -286,8 +286,8 @@ ax1.tick_params(axis="y", labelcolor=color)
 
 color = "black"
 ax2 = ax1.twinx()
-ax2.plot(t, psi_tot * 1e3, color=color, linestyle="--")
-ax2.set_ylim(-10, 100)
+ax2.plot(t, psi * 1e3, color=color, linestyle="--")
+ax2.set_ylim(-10, 140)
 ax2.set_ylabel("psi [mV]", color=color)
 ax2.tick_params(axis="y", labelcolor=color)
 
@@ -338,8 +338,8 @@ ax1.tick_params(axis="y", labelcolor=color)
 
 color = "black"
 ax2 = ax1.twinx()
-ax2.plot(t, psi_tot * 1e3, color=color, linestyle="--")
-ax2.set_ylim(-10, 100)
+ax2.plot(t, psi * 1e3, color=color, linestyle="--")
+ax2.set_ylim(-10, 140)
 ax2.set_ylabel("psi [mV]", color=color)
 ax2.tick_params(axis="y", labelcolor=color)
 
@@ -390,8 +390,8 @@ ax1.tick_params(axis="y", labelcolor=color)
 
 color = "black"
 ax2 = ax1.twinx()
-ax2.plot(t, psi_tot * 1e3, color=color, linestyle="--")
-ax2.set_ylim(-10, 100)
+ax2.plot(t, psi * 1e3, color=color, linestyle="--")
+ax2.set_ylim(-10, 140)
 ax2.set_ylabel("psi [mV]", color=color)
 ax2.tick_params(axis="y", labelcolor=color)
 

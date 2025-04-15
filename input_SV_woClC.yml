@@ -9,27 +9,28 @@ p:
   N_A: 6.02214076e+23 # Avogadro constant [mol^-1]
 
   # Temperature
-  T: 35.0 # Temperature [C]
+  T: 25.0 # Temperature [C]
 
   # Cytosolic concentrations
-  pH_C: 7.4 # Cytosolic pH []
+  pH_C: 7.2 # Cytosolic pH []
   K_C: 145.0e-3 # Cytosolic K+ concentration [M]
   Na_C: 10.0e-3 # Cytosolic Na+ concentration [M]
-  Cl_C: 5.0e-3 # Cytosolic Cl- concentration [M]
+  Cl_C:  10.0e-3 # Cytosolic Cl- concentration [M]
+  GLUT_C: 10.0e-3 # Cytosolic glutamate concentration [M]
   
   # Luminal concentrations
   K_L: 5.0e-3 # Cytosolic K+ concentration [M]
   Na_L: 145.0e-3 # Cytosolic Na+ concentration [M]
 
   # Permeabilities
-  P_H: 1.228e-3 # H+ permeability [cm/s]
+  P_H: 1.228e-3 # H+ permeability [cm/s] 1.526e-3
   P_Cl: 0 #1.2e-5 # Cl- permeability [cm/s]
   P_W: 0 # 0.052 # H2O permeability [cm/s]
 
   # Capacitance density
   C_0: 1.0e-6 # Lipid bilayer capacitance [F/cm^2]
   
-  # Leaflets potentials
+  # Membrane potentials
   psi_tot: 0.0 # Initial total voltage difference across lipid bilayer [V]
   psi_o: -50.0e-3 # Outside leaflet potential [V]
   psi_i: 0.0 # Inside leaflet potential [V]
@@ -48,13 +49,22 @@ p:
   theta_C: 290.0e-03 # Cytoplasmic osmolyte concentration [M]
 
   # Pumps quantity
-  N_V: 1.4 # Number of V-ATPases
-  N_ClC: 2 # Number of ClC-3 antiporters
-
-  # ClC-3 pump stoichiometry
-  ClC_Cl: 2 # ClC-3 Cl- Stoichiometry
-  ClC_H: 1 # ClC-3 H+ Stoichiometry
-
+  N_V: 1 # Number of V-ATPases
+  N_VGAT: 1 # Number of GABA transporters VGAT
+  N_VGLUT: 1 # Number of glutamate transporters VGLUT-1
+  
+  # VGAT transporter stoichiometry
+  VGAT_GABA: 1 # VGAT GABA Stoichiometry
+  VGAT_H: 1 # VGAT H+ Stoichiometry
+  
+  # Neurotransmitters trasnsport rates
+  k_GABA: 77.438 # GABA transport rate [s^-1]
+  tau_VGAT: 13.108 # VGAT time constant [s]
+  tau_GABA: 51.658 # GABA efflux time constant [s]
+  pKM: 5.5 # Michaelis-Menten constant for VGLUT dependance on pH []
+  KM: 5.0e-3 # Michaelis-Menten constant for VGLUT dependance on Cl- [M]
+  Vmaxglu: 1.6e+4  # Maximum VGLUT glutamate transport rate [s^-1 * V^-1]
+  VmaxCl: 648 # Maximum VGLUT Cl- transport rate [s^-1 * V^-1]
 
 
 # Initial conditions
@@ -62,6 +72,8 @@ init:
 
   # Luminal concentrations
   H_L: 0.0 # Luminal H+ concentration [M]
-  pH_L: 6.6 # Luminal pH []
+  pH_L: 7.2 # Luminal pH []
   Cl_L: 110.0e-3 # Luminal Cl- concentration [M]
+  GABA_L: 0 # Luminal GABA concentration [M]
+  GLUT_L: 1.0e-6 # Luminal GLUT concentration [M]
   V: 3.35e-20 # SV volume [L] (if NOT considered spherical)
