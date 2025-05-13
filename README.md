@@ -30,7 +30,7 @@ Create a new python virtual environment (recommended python 3.12).
 
 In it, install required dependencies:
 ```bash
-   pip install numpy scipy matplotlib pyyaml pandas lmfit
+pip install numpy scipy matplotlib pyyaml pandas lmfit
 ```
 
 Clone the repository:
